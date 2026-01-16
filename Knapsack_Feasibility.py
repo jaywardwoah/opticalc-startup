@@ -84,15 +84,19 @@ def login_page():
 # ==========================================
 def solve_knapsack(items, capacity):
     n = len(items)
-    costs = [item['cost'] for item in items]
-    profits = [item['profit'] for item in items]
+    # FORCE INT: This fixes the "TypeError" by removing decimals
+    costs = [int(item['cost']) for item in items]
+    profits = [int(item['profit']) for item in items]
+    capacity = int(capacity)
     
     dp = [[0 for _ in range(capacity + 1)] for _ in range(n + 1)]
 
     for i in range(1, n + 1):
         for w in range(1, capacity + 1):
             if costs[i-1] <= w:
-                dp[i][w] = max(profits[i-1] + dp[i-1][w-costs[i-1]], dp[i-1][w])
+                # The 'w-costs[i-1]' part must be an integer calculation
+                remaining_weight = int(w - costs[i-1]) 
+                dp[i][w] = max(profits[i-1] + dp[i-1][remaining_weight], dp[i-1][w])
             else:
                 dp[i][w] = dp[i-1][w]
 
@@ -102,6 +106,7 @@ def solve_knapsack(items, capacity):
         if dp[i][w] != dp[i-1][w]:
             selected_items.append(items[i-1])
             w -= costs[i-1]
+            w = int(w) # Ensure w remains an integer during backtracking
             
     return dp[n][capacity], selected_items
 
@@ -220,5 +225,6 @@ if st.session_state.logged_in:
     main_app()
 else:
     login_page()
+
 
 
