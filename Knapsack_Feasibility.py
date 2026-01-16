@@ -40,7 +40,7 @@ def paywall_screen():
     
     st.divider()
     
-    tab1, tab2 = st.tabs(["Log In (Existing User)", "Upgrade Now (Sign Up)"])
+    tab1, tab2 = st.tabs(["Log In", "Sign Up"])
     
     # --- TAB 1: LOGIN ---
     with tab1:
@@ -151,7 +151,7 @@ def main_app():
             st.rerun()
 
     # --- MAIN DASHBOARD ---
-    st.title("📈 OptiFlip Dashboard")
+    st.title("📈 OptiCalc Dashboard")
 
     # --- 1. MARKET SCOUTING ---
     st.subheader("1. Market Scouting")
@@ -220,15 +220,21 @@ def main_app():
                         st.session_state.show_paywall = True
                         st.rerun()
                     else:
-                        st.session_state.history.append({
+                        # 1. Append the new record
+                        new_record = {
                             "date": datetime.now().strftime("%H:%M:%S"),
                             "budget": budget,
                             "profit": max_profit,
                             "items": best_items
-                        })
+                        }
+                        st.session_state.history.append(new_record)
+                        
+                        # 2. Show success message
                         st.success("Saved!")
+                        
+                        # 3. FORCE REFRESH so the sidebar updates instantly
                         time.sleep(0.5)
-                        st.rerun() # Refresh to show in sidebar immediately!
+                        st.rerun()
 
             with c_export:
                 if is_premium:
@@ -252,3 +258,4 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
