@@ -11,7 +11,7 @@ st.set_page_config(page_title="OptiCalc: Smart Reseller", layout="centered")
 # Format: "username": {"password": "password", "plan": "Free" or "Premium"}
 USERS_DB = {
     "student": {"password": "123", "plan": "Free", "name": "Juan Dela Cruz"},
-    "admin": {"password": "admin", "plan": "Premium", "name": "Ms. CEO"}
+    "admin": {"password": "admin", "plan": "Premium", "name": "Master Jayward"}
 }
 
 # Initialize Session State
@@ -205,4 +205,5 @@ if st.session_state.logged_in:
     main_app()
 else:
     login_page()
+
 
