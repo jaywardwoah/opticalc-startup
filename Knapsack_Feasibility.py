@@ -5,7 +5,7 @@ import time
 # ==========================================
 # CONFIGURATION & SETUP
 # ==========================================
-st.set_page_config(page_title="OptiFlip: Smart Reseller", layout="centered")
+st.set_page_config(page_title="OptiCalc: Smart Reseller", layout="centered")
 
 # --- INITIALIZE DATABASE IN SESSION STATE ---
 # This allows us to add new users while the app is running!
@@ -220,3 +220,4 @@ if st.session_state.logged_in:
     main_app()
 else:
     login_page()
+
