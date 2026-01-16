@@ -3,18 +3,19 @@ import pandas as pd
 import time
 
 # ==========================================
-# CONFIGURATION & AUTHENTICATION (MOCK DB)
+# CONFIGURATION & SETUP
 # ==========================================
-st.set_page_config(page_title="OptiCalc: Smart Reseller", layout="centered")
+st.set_page_config(page_title="OptiFlip: Smart Reseller", layout="centered")
 
-# Simulating a Database of Users
-# Format: "username": {"password": "password", "plan": "Free" or "Premium"}
-USERS_DB = {
-    "student": {"password": "123", "plan": "Free", "name": "Juan Dela Cruz"},
-    "admin": {"password": "admin", "plan": "Premium", "name": "Master Jayward"}
-}
+# --- INITIALIZE DATABASE IN SESSION STATE ---
+# This allows us to add new users while the app is running!
+if 'users_db' not in st.session_state:
+    st.session_state.users_db = {
+        "student": {"password": "123", "plan": "Free", "name": "Juan Dela Cruz"},
+        "admin": {"password": "admin", "plan": "Premium", "name": "Engr. Jayward Balinas"}
+    }
 
-# Initialize Session State
+# Initialize Session Flags
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'user_info' not in st.session_state:
@@ -23,28 +24,60 @@ if 'inventory' not in st.session_state:
     st.session_state.inventory = []
 
 # ==========================================
-# PART 1: LOGIN SCREEN
+# PART 1: LOGIN & SIGN UP SYSTEM
 # ==========================================
 def login_page():
     st.title("🔐 OptiCalc Login")
-    st.markdown("Please sign in to access your reseller dashboard.")
     
-    with st.form("login_form"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submit = st.form_submit_button("Sign In")
+    # Create Tabs for Login and Sign Up
+    tab1, tab2 = st.tabs(["Log In", "Create Account"])
+    
+    # --- TAB 1: LOGIN ---
+    with tab1:
+        st.subheader("Welcome Back")
+        with st.form("login_form"):
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submit = st.form_submit_button("Log In")
+            
+            if submit:
+                db = st.session_state.users_db
+                if username in db and db[username]["password"] == password:
+                    st.session_state.logged_in = True
+                    st.session_state.user_info = db[username]
+                    st.success("Login Successful!")
+                    time.sleep(0.5)
+                    st.rerun()
+                else:
+                    st.error("Invalid Username or Password")
         
-        if submit:
-            if username in USERS_DB and USERS_DB[username]["password"] == password:
-                st.session_state.logged_in = True
-                st.session_state.user_info = USERS_DB[username]
-                st.success("Login Successful! Redirecting...")
-                time.sleep(1)
-                st.rerun()
-            else:
-                st.error("Invalid Username or Password")
-    
-    st.info("💡 **Demo Credentials:**\n\n* **Free User:** `student` / `12345`\n* **Pro User:** `admin` / `admin`")
+        st.caption("Try Demo: `admin` / `admin`")
+
+    # --- TAB 2: SIGN UP ---
+    with tab2:
+        st.subheader("New Reseller Registration")
+        with st.form("signup_form"):
+            new_user = st.text_input("Choose a Username")
+            new_pass = st.text_input("Choose a Password", type="password")
+            new_name = st.text_input("Your Full Name")
+            # For demo purposes, we let them choose the plan
+            new_plan = st.selectbox("Select Subscription Plan", ["Free", "Premium"])
+            
+            signup_submit = st.form_submit_button("Sign Up")
+            
+            if signup_submit:
+                if new_user in st.session_state.users_db:
+                    st.error("Username already exists!")
+                elif new_user and new_pass:
+                    # Save new user to the session database
+                    st.session_state.users_db[new_user] = {
+                        "password": new_pass,
+                        "plan": new_plan,
+                        "name": new_name
+                    }
+                    st.success("Account Created! You can now Log In.")
+                else:
+                    st.warning("Please fill in all fields.")
 
 # ==========================================
 # PART 2: THE ALGORITHM (KNAPSACK)
@@ -54,10 +87,8 @@ def solve_knapsack(items, capacity):
     costs = [item['cost'] for item in items]
     profits = [item['profit'] for item in items]
     
-    # DP Table Initialization
     dp = [[0 for _ in range(capacity + 1)] for _ in range(n + 1)]
 
-    # Build Table
     for i in range(1, n + 1):
         for w in range(1, capacity + 1):
             if costs[i-1] <= w:
@@ -65,7 +96,6 @@ def solve_knapsack(items, capacity):
             else:
                 dp[i][w] = dp[i-1][w]
 
-    # Backtracking to find selected items
     selected_items = []
     w = capacity
     for i in range(n, 0, -1):
@@ -83,22 +113,20 @@ def main_app():
     plan = user['plan']
     
     # --- HEADER & SIDEBAR ---
-    st.sidebar.title(f"👤 Welcome, {user['name']}")
-    st.sidebar.caption(f"Subscription: **{plan} Tier**")
+    st.sidebar.title(f"👤 {user['name']}")
+    st.sidebar.caption(f"Plan: **{plan} Tier**")
     
     if st.sidebar.button("Log Out"):
         st.session_state.logged_in = False
         st.session_state.user_info = None
         st.rerun()
 
-    # Premium Logic limits
     ITEM_LIMIT = 5 if plan == "Free" else 999
     
     st.title("📈 OptiCalc Dashboard")
     
-    # --- PREMIUM ADVERTISEMENT (Only for Free Users) ---
     if plan == "Free":
-        st.warning("🔒 **You are on the Free Plan.** Upgrade to Premium to unlock:\n\n- ✏️ **Edit Data Directly in Table**\n- 📂 Export to Excel\n- 📊 Visual Analytics\n- ♾️ Unlimited Item Inputs")
+        st.warning("🔒 **Free Plan Limits Active.** Upgrade to Premium for Unlimited Access.")
 
     # --- INPUT MODULE ---
     st.divider()
@@ -108,7 +136,6 @@ def main_app():
     with col2: cost_input = st.number_input("Cost (₱)", min_value=0, step=100)
     with col3: sell_input = st.number_input("Sell Price (₱)", min_value=0, step=100)
 
-    # Add Item Button
     if st.button("Add Item"):
         if len(st.session_state.inventory) >= ITEM_LIMIT:
             st.error(f"🔒 Free Limit Reached ({ITEM_LIMIT} items). Upgrade to Add More.")
@@ -124,31 +151,23 @@ def main_app():
             time.sleep(0.5) 
             st.rerun()
 
-    # --- INVENTORY DISPLAY (THE EDITABLE PART) ---
+    # --- INVENTORY DISPLAY ---
     if st.session_state.inventory:
         st.write("### Current Inventory List")
-        
-        # Convert list to DataFrame for display
         df = pd.DataFrame(st.session_state.inventory)
 
         if plan == "Premium":
-            st.caption("✨ **Pro Feature Active:** You can edit cells directly below. (Try changing a Cost!)")
-            
-            # THE MAGIC EDITABLE TABLE
+            st.caption("✨ **Pro Feature:** Edit cells directly below.")
             edited_df = st.data_editor(
                 df, 
-                num_rows="dynamic", # Allows adding/deleting rows
+                num_rows="dynamic",
                 use_container_width=True,
                 key="editor"
             )
-            
-            # SYNC EDITS BACK TO SESSION STATE
-            # Recalculate profit automatically if user changed cost/sell
+            # Sync edits
             edited_df['profit'] = edited_df['sell'] - edited_df['cost']
             st.session_state.inventory = edited_df.to_dict('records')
-            
         else:
-            # Free users see a Static Table
             st.dataframe(df, use_container_width=True)
             if st.button("Clear List"):
                 st.session_state.inventory = []
@@ -163,7 +182,6 @@ def main_app():
         if not st.session_state.inventory:
             st.warning("List is empty.")
         else:
-            # Use the inventory (which might have been edited)
             max_profit, best_items = solve_knapsack(st.session_state.inventory, int(budget))
             total_cost = sum(i['cost'] for i in best_items)
             roi = (max_profit / total_cost * 100) if total_cost > 0 else 0
@@ -177,16 +195,14 @@ def main_app():
             result_df = pd.DataFrame(best_items)
             st.dataframe(result_df, use_container_width=True)
 
-            # --- PREMIUM FEATURE: ANALYTICS & EXPORT ---
+            # --- PREMIUM TOOLS ---
             st.divider()
             st.subheader("3. Premium Tools")
             
             if plan == "Premium":
-                # Feature A: Visual Analytics
                 st.write("📊 **Capital Allocation Chart**")
                 st.bar_chart(result_df.set_index('name')['cost'])
                 
-                # Feature B: Export Data
                 csv = result_df.to_csv(index=False).encode('utf-8')
                 st.download_button(
                     label="📂 Download Purchase Order (CSV)",
@@ -196,7 +212,6 @@ def main_app():
                 )
             else:
                 st.info("🔒 **Analytics & Export are locked.**")
-                st.caption("Upgrade to Premium to visualize your data and download reports.")
 
 # ==========================================
 # MAIN EXECUTION
@@ -205,5 +220,3 @@ if st.session_state.logged_in:
     main_app()
 else:
     login_page()
-
-
