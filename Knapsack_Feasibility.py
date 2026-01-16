@@ -31,7 +31,7 @@ if 'payment_verified' not in st.session_state:
 # PART 1: THE "GRAMMARLY" PAYWALL SCREEN
 # ==========================================
 def paywall_screen():
-    st.title("🚀 Unlock OptiFlip Premium")
+    st.title("🚀 Unlock OptiCalc Premium")
     st.markdown("You hit a Pro feature! Log in or Upgrade to continue.")
     
     # Close Button (Go back to Free version)
@@ -41,7 +41,7 @@ def paywall_screen():
     
     st.divider()
     
-    tab1, tab2 = st.tabs(["Log In (Existing User)", "Upgrade Now (Sign Up)"])
+    tab1, tab2 = st.tabs(["Log In", "Sign Up)"])
     
     # --- TAB 1: LOGIN ---
     with tab1:
@@ -244,4 +244,5 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
