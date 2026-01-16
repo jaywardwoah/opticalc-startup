@@ -12,7 +12,7 @@ st.set_page_config(page_title="OptiCalc: Smart Reseller", layout="centered")
 if 'users_db' not in st.session_state:
     st.session_state.users_db = {
         "student": {"password": "123", "plan": "Free", "name": "Juan Dela Cruz"},
-        "admin": {"password": "admin", "plan": "Premium", "name": "Engr. Jayward Balinas"}
+        "admin": {"password": "admin", "plan": "Premium", "name": "Admin"}
     }
 
 # Initialize Session Flags
@@ -220,4 +220,5 @@ if st.session_state.logged_in:
     main_app()
 else:
     login_page()
+
 
