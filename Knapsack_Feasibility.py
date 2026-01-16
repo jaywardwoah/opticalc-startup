@@ -252,7 +252,7 @@ def main_app():
                 csv = result_df.to_csv(index=False).encode('utf-8')
                 st.download_button("📂 Download CSV", csv, "optiflip.csv", "text/csv")
             else:
-                if st.button("📂 Download CSV (Locked)"):
+                if st.button("📂 Download CSV"):
                     st.session_state.show_paywall = True
                     st.rerun()
         
@@ -269,3 +269,4 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
