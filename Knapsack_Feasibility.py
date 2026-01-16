@@ -26,7 +26,7 @@ if 'inventory' not in st.session_state:
 # PART 1: LOGIN SCREEN
 # ==========================================
 def login_page():
-    st.title("🔐 OptiFlip Login")
+    st.title("🔐 OptiCalc Login")
     st.markdown("Please sign in to access your reseller dashboard.")
     
     with st.form("login_form"):
@@ -205,3 +205,4 @@ if st.session_state.logged_in:
     main_app()
 else:
     login_page()
+
