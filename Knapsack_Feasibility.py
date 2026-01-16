@@ -11,11 +11,10 @@ st.set_page_config(page_title="OptiCalc: Smart Reseller", layout="centered")
 # --- DATABASE (MOCK) ---
 if 'users_db' not in st.session_state:
     st.session_state.users_db = {
-        "admin": {"password": "admin", "plan": "Premium", "name": "Admin"}
+        "admin": {"password": "admin", "plan": "Premium", "name": "Engr. Jayward Balinas"}
     }
 
 # --- SESSION FLAGS ---
-# Default user is "Guest" (Free)
 if 'user_info' not in st.session_state:
     st.session_state.user_info = {"name": "Guest User", "plan": "Free"}
 if 'inventory' not in st.session_state:
@@ -23,9 +22,13 @@ if 'inventory' not in st.session_state:
 if 'history' not in st.session_state:
     st.session_state.history = []
 if 'show_paywall' not in st.session_state:
-    st.session_state.show_paywall = False # Controls the Pop-up
+    st.session_state.show_paywall = False
 if 'payment_verified' not in st.session_state:
     st.session_state.payment_verified = False
+
+# [NEW] Store the Latest Analysis Result here so it persists!
+if 'latest_result' not in st.session_state:
+    st.session_state.latest_result = None
 
 # ==========================================
 # PART 1: THE "GRAMMARLY" PAYWALL SCREEN
@@ -40,9 +43,8 @@ def paywall_screen():
     
     st.divider()
     
-    tab1, tab2 = st.tabs(["Log In", "Sign Up"])
+    tab1, tab2 = st.tabs(["Log In (Existing User)", "Upgrade Now (Sign Up)"])
     
-    # --- TAB 1: LOGIN ---
     with tab1:
         with st.form("login_form"):
             username = st.text_input("Username")
@@ -58,7 +60,6 @@ def paywall_screen():
                 else:
                     st.error("Invalid Credentials")
 
-    # --- TAB 2: SIGN UP + PAYMENT ---
     with tab2:
         st.write("### ⚡ Create Premium Account")
         new_user = st.text_input("Choose Username")
@@ -91,7 +92,7 @@ def paywall_screen():
                 st.rerun()
 
 # ==========================================
-# PART 2: THE ALGORITHM (FIXED INT)
+# PART 2: THE ALGORITHM
 # ==========================================
 def solve_knapsack(items, capacity):
     costs = [int(item['cost']) for item in items]
@@ -115,26 +116,25 @@ def solve_knapsack(items, capacity):
     return dp[n][capacity], selected
 
 # ==========================================
-# PART 3: MAIN APP (WITH HISTORY SIDEBAR)
+# PART 3: MAIN APP (FIXED LOGIC)
 # ==========================================
 def main_app():
     user = st.session_state.user_info
     plan = user['plan']
     is_premium = plan == "Premium"
     
-    # --- SIDEBAR HISTORY (THIS WAS MISSING!) ---
+    # --- SIDEBAR HISTORY ---
     st.sidebar.title(f"👤 {user['name']}")
     if is_premium:
         st.sidebar.caption("👑 Premium Member")
         st.sidebar.divider()
         st.sidebar.subheader("📜 History Log")
         
-        # Display History Items
         if st.session_state.history:
             for i, record in enumerate(reversed(st.session_state.history)):
                 with st.sidebar.expander(f"{record['date']} - ₱{record['profit']}"):
                     st.write(f"**Budget:** ₱{record['budget']}")
-                    st.write("**Strategy:**")
+                    st.write("**Items:**")
                     for item in record['items']:
                         st.text(f"- {item['name']}")
         else:
@@ -143,6 +143,7 @@ def main_app():
         st.sidebar.divider()
         if st.sidebar.button("Log Out"):
             st.session_state.user_info = {"name": "Guest User", "plan": "Free"}
+            st.session_state.latest_result = None # Clear result on logout
             st.rerun()
     else:
         st.sidebar.caption("Guest Mode (Free)")
@@ -152,9 +153,8 @@ def main_app():
 
     # --- MAIN DASHBOARD ---
     st.title("📈 OptiCalc Dashboard")
-
-    # --- 1. MARKET SCOUTING ---
     st.subheader("1. Market Scouting")
+    
     c1, c2, c3 = st.columns(3)
     with c1: name_input = st.text_input("Item Name")
     with c2: cost_input = st.number_input("Cost (₱)", min_value=0, step=100)
@@ -190,66 +190,77 @@ def main_app():
                 st.session_state.inventory = []
                 st.rerun()
 
-    # --- 2. OPTIMIZATION ---
+    # --- 2. OPTIMIZATION ENGINE ---
     st.divider()
     st.subheader("2. Optimization Engine")
     budget = st.number_input("Total Capital (₱)", min_value=0, value=10000, step=500)
 
+    # --- BUTTON 1: RUN ANALYSIS ---
     if st.button("🚀 Run Analysis", type="primary"):
         if not st.session_state.inventory:
             st.warning("List is empty.")
         else:
+            # 1. Calculate
             max_profit, best_items = solve_knapsack(st.session_state.inventory, int(budget))
             total_cost = sum(i['cost'] for i in best_items)
             roi = (max_profit / total_cost * 100) if total_cost > 0 else 0
-
-            st.success("Analysis Complete!")
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Investment", f"₱{total_cost:,.0f}")
-            m2.metric("Profit", f"₱{max_profit:,.0f}")
-            m3.metric("ROI", f"{roi:.1f}%")
-
-            result_df = pd.DataFrame(best_items)
-            st.dataframe(result_df, use_container_width=True)
-
-            # SAVE TO HISTORY LOGIC
-            c_save, c_export = st.columns(2)
-            with c_save:
-                if st.button("💾 Save to History"):
-                    if not is_premium:
-                        st.session_state.show_paywall = True
-                        st.rerun()
-                    else:
-                        # 1. Append the new record
-                        new_record = {
-                            "date": datetime.now().strftime("%H:%M:%S"),
-                            "budget": budget,
-                            "profit": max_profit,
-                            "items": best_items
-                        }
-                        st.session_state.history.append(new_record)
-                        
-                        # 2. Show success message
-                        st.success("Saved!")
-                        
-                        # 3. FORCE REFRESH so the sidebar updates instantly
-                        time.sleep(0.5)
-                        st.rerun()
-
-            with c_export:
-                if is_premium:
-                    csv = result_df.to_csv(index=False).encode('utf-8')
-                    st.download_button("📂 Download CSV", csv, "optiflip.csv", "text/csv")
-                else:
-                    if st.button("📂 Download CSV (Locked)"):
-                        st.session_state.show_paywall = True
-                        st.rerun()
             
-            st.write("---")
+            # 2. SAVE TO SESSION STATE (This fixes the disappearing button issue!)
+            st.session_state.latest_result = {
+                "max_profit": max_profit,
+                "best_items": best_items,
+                "total_cost": total_cost,
+                "roi": roi,
+                "budget": budget
+            }
+
+    # --- DISPLAY RESULTS (Outside the button block) ---
+    # We check if a result exists in memory. If yes, we show it.
+    if st.session_state.latest_result:
+        res = st.session_state.latest_result
+        
+        st.success("Analysis Complete!")
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Investment", f"₱{res['total_cost']:,.0f}")
+        m2.metric("Profit", f"₱{res['max_profit']:,.0f}")
+        m3.metric("ROI", f"{res['roi']:.1f}%")
+
+        result_df = pd.DataFrame(res['best_items'])
+        st.dataframe(result_df, use_container_width=True)
+
+        # --- BUTTON 2: SAVE TO HISTORY (Now safe outside the other button) ---
+        c_save, c_export = st.columns(2)
+        
+        with c_save:
+            if st.button("💾 Save to History"):
+                if not is_premium:
+                    st.session_state.show_paywall = True
+                    st.rerun()
+                else:
+                    st.session_state.history.append({
+                        "date": datetime.now().strftime("%H:%M:%S"),
+                        "budget": res['budget'],
+                        "profit": res['max_profit'],
+                        "items": res['best_items']
+                    })
+                    st.success("Saved!")
+                    time.sleep(0.5)
+                    st.rerun()
+
+        with c_export:
             if is_premium:
-                st.bar_chart(result_df.set_index('name')['cost'])
+                csv = result_df.to_csv(index=False).encode('utf-8')
+                st.download_button("📂 Download CSV", csv, "optiflip.csv", "text/csv")
             else:
-                st.info("🔒 Charts are locked for Guest Users.")
+                if st.button("📂 Download CSV (Locked)"):
+                    st.session_state.show_paywall = True
+                    st.rerun()
+        
+        st.write("---")
+        if is_premium:
+            st.bar_chart(result_df.set_index('name')['cost'])
+        else:
+            st.info("🔒 Charts are locked for Guest Users.")
 
 # ==========================================
 # EXECUTION
@@ -258,4 +269,3 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
-
