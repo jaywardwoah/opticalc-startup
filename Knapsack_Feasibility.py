@@ -6,12 +6,12 @@ from datetime import datetime
 # ==========================================
 # CONFIGURATION & STATE
 # ==========================================
-st.set_page_config(page_title="OptiFlip: Smart Reseller", layout="centered")
+st.set_page_config(page_title="OptiCalc: Smart Reseller", layout="centered")
 
 # --- DATABASE (MOCK) ---
 if 'users_db' not in st.session_state:
     st.session_state.users_db = {
-        "admin": {"password": "admin", "plan": "Premium", "name": "Engr. Jayward Balinas"}
+        "admin": {"password": "admin", "plan": "Premium", "name": "admin"}
     }
 
 # --- SESSION FLAGS ---
@@ -129,7 +129,7 @@ def main_app():
     
     # --- HEADER ---
     c1, c2 = st.columns([3, 1])
-    with c1: st.title("📈 OptiFlip Dashboard")
+    with c1: st.title("📈 OptiCalc Dashboard")
     with c2: 
         if is_premium:
             st.success(f"👑 {user['name']}")
@@ -244,3 +244,4 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
