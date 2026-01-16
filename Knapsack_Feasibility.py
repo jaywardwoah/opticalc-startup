@@ -11,7 +11,7 @@ st.set_page_config(page_title="OptiCalc: Smart Reseller", layout="centered")
 # --- DATABASE (MOCK) ---
 if 'users_db' not in st.session_state:
     st.session_state.users_db = {
-        "admin": {"password": "admin", "plan": "Premium", "name": "admin"}
+        "admin": {"password": "admin", "plan": "Premium", "name": "Admin"}
     }
 
 # --- SESSION FLAGS ---
@@ -34,14 +34,13 @@ def paywall_screen():
     st.title("🚀 Unlock OptiCalc Premium")
     st.markdown("You hit a Pro feature! Log in or Upgrade to continue.")
     
-    # Close Button (Go back to Free version)
     if st.button("← Back to Free Version"):
         st.session_state.show_paywall = False
         st.rerun()
     
     st.divider()
     
-    tab1, tab2 = st.tabs(["Log In", "Sign Up)"])
+    tab1, tab2 = st.tabs(["Log In (Existing User)", "Upgrade Now (Sign Up)"])
     
     # --- TAB 1: LOGIN ---
     with tab1:
@@ -52,7 +51,7 @@ def paywall_screen():
                 db = st.session_state.users_db
                 if username in db and db[username]["password"] == password:
                     st.session_state.user_info = db[username]
-                    st.session_state.show_paywall = False # Close Paywall
+                    st.session_state.show_paywall = False
                     st.success(f"Welcome back, {db[username]['name']}!")
                     time.sleep(0.5)
                     st.rerun()
@@ -66,7 +65,6 @@ def paywall_screen():
         new_pass = st.text_input("Choose Password", type="password")
         new_name = st.text_input("Your Name")
         
-        # Payment Gateway Simulation
         st.info("💳 **Premium Plan: ₱99/month**")
         with st.expander("💸 Proceed to Payment (GCash/Maya)", expanded=True):
             c1, c2 = st.columns([1, 2])
@@ -82,11 +80,9 @@ def paywall_screen():
             if not st.session_state.payment_verified:
                 st.error("❌ Please confirm payment first!")
             elif new_user and new_pass:
-                # Create Account
                 st.session_state.users_db[new_user] = {
                     "password": new_pass, "plan": "Premium", "name": new_name
                 }
-                # Auto-Login the new user
                 st.session_state.user_info = st.session_state.users_db[new_user]
                 st.session_state.show_paywall = False
                 st.success("Welcome to Premium!")
@@ -95,10 +91,9 @@ def paywall_screen():
                 st.rerun()
 
 # ==========================================
-# PART 2: THE ALGORITHM (Standard)
+# PART 2: THE ALGORITHM (FIXED INT)
 # ==========================================
 def solve_knapsack(items, capacity):
-    # FORCE INT
     costs = [int(item['cost']) for item in items]
     profits = [int(item['profit']) for item in items]
     capacity = int(capacity)
@@ -120,40 +115,53 @@ def solve_knapsack(items, capacity):
     return dp[n][capacity], selected
 
 # ==========================================
-# PART 3: MAIN APP (THE TRIGGER SYSTEM)
+# PART 3: MAIN APP (WITH HISTORY SIDEBAR)
 # ==========================================
 def main_app():
     user = st.session_state.user_info
     plan = user['plan']
     is_premium = plan == "Premium"
     
-    # --- HEADER ---
-    c1, c2 = st.columns([3, 1])
-    with c1: st.title("📈 OptiCalc Dashboard")
-    with c2: 
-        if is_premium:
-            st.success(f"👑 {user['name']}")
-            if st.button("Log Out"):
-                st.session_state.user_info = {"name": "Guest User", "plan": "Free"}
-                st.rerun()
+    # --- SIDEBAR HISTORY (THIS WAS MISSING!) ---
+    st.sidebar.title(f"👤 {user['name']}")
+    if is_premium:
+        st.sidebar.caption("👑 Premium Member")
+        st.sidebar.divider()
+        st.sidebar.subheader("📜 History Log")
+        
+        # Display History Items
+        if st.session_state.history:
+            for i, record in enumerate(reversed(st.session_state.history)):
+                with st.sidebar.expander(f"{record['date']} - ₱{record['profit']}"):
+                    st.write(f"**Budget:** ₱{record['budget']}")
+                    st.write("**Strategy:**")
+                    for item in record['items']:
+                        st.text(f"- {item['name']}")
         else:
-            if st.button("🔓 Login / Upgrade"):
-                st.session_state.show_paywall = True
-                st.rerun()
+            st.sidebar.info("No saved calculations yet.")
+            
+        st.sidebar.divider()
+        if st.sidebar.button("Log Out"):
+            st.session_state.user_info = {"name": "Guest User", "plan": "Free"}
+            st.rerun()
+    else:
+        st.sidebar.caption("Guest Mode (Free)")
+        if st.sidebar.button("🔓 Login / Upgrade"):
+            st.session_state.show_paywall = True
+            st.rerun()
+
+    # --- MAIN DASHBOARD ---
+    st.title("📈 OptiFlip Dashboard")
 
     # --- 1. MARKET SCOUTING ---
-    st.divider()
     st.subheader("1. Market Scouting")
-    
     c1, c2, c3 = st.columns(3)
     with c1: name_input = st.text_input("Item Name")
     with c2: cost_input = st.number_input("Cost (₱)", min_value=0, step=100)
     with c3: sell_input = st.number_input("Sell Price (₱)", min_value=0, step=100)
 
-    # TRIGGER 1: ADDING TOO MANY ITEMS
     if st.button("Add Item"):
         if not is_premium and len(st.session_state.inventory) >= 5:
-            # TRIGGER THE PAYWALL
             st.session_state.show_paywall = True
             st.rerun()
         elif name_input and cost_input > 0:
@@ -168,8 +176,6 @@ def main_app():
 
     if st.session_state.inventory:
         df = pd.DataFrame(st.session_state.inventory)
-        
-        # TRIGGER 2: EDITABLE TABLE
         if is_premium:
             st.caption("✨ **Pro Mode:** Edit cells directly.")
             edited_df = st.data_editor(df, num_rows="dynamic", use_container_width=True, key="editor")
@@ -177,11 +183,9 @@ def main_app():
             st.session_state.inventory = edited_df.to_dict('records')
         else:
             st.dataframe(df, use_container_width=True)
-            # Fake "Unlock" button to tempt them
             if st.button("🔒 Unlock Editing"):
                 st.session_state.show_paywall = True
                 st.rerun()
-                
             if st.button("Clear List"):
                 st.session_state.inventory = []
                 st.rerun()
@@ -208,7 +212,7 @@ def main_app():
             result_df = pd.DataFrame(best_items)
             st.dataframe(result_df, use_container_width=True)
 
-            # TRIGGER 3: SAVING HISTORY
+            # SAVE TO HISTORY LOGIC
             c_save, c_export = st.columns(2)
             with c_save:
                 if st.button("💾 Save to History"):
@@ -216,10 +220,16 @@ def main_app():
                         st.session_state.show_paywall = True
                         st.rerun()
                     else:
-                        st.session_state.history.append({"date": datetime.now().strftime("%H:%M"), "profit": max_profit})
+                        st.session_state.history.append({
+                            "date": datetime.now().strftime("%H:%M:%S"),
+                            "budget": budget,
+                            "profit": max_profit,
+                            "items": best_items
+                        })
                         st.success("Saved!")
+                        time.sleep(0.5)
+                        st.rerun() # Refresh to show in sidebar immediately!
 
-            # TRIGGER 4: EXPORTING DATA
             with c_export:
                 if is_premium:
                     csv = result_df.to_csv(index=False).encode('utf-8')
@@ -229,20 +239,16 @@ def main_app():
                         st.session_state.show_paywall = True
                         st.rerun()
             
-            # TRIGGER 5: ANALYTICS
             st.write("---")
             if is_premium:
                 st.bar_chart(result_df.set_index('name')['cost'])
             else:
                 st.info("🔒 Charts are locked for Guest Users.")
 
-
 # ==========================================
-# MAIN EXECUTION CONTROLLER
+# EXECUTION
 # ==========================================
 if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
-
-
