@@ -6,12 +6,12 @@ from datetime import datetime
 # ==========================================
 # CONFIGURATION & STATE
 # ==========================================
-st.set_page_config(page_title="OptiCalc: Smart Reseller", layout="centered")
+st.set_page_config(page_title="OptiFlip: Smart Reseller", layout="centered")
 
 # --- DATABASE (MOCK) ---
 if 'users_db' not in st.session_state:
     st.session_state.users_db = {
-        "admin": {"password": "admin", "plan": "Premium", "name": "admin"}
+        "admin": {"password": "admin", "plan": "Premium", "name": "Engr. Jayward Balinas"}
     }
 
 # --- SESSION FLAGS ---
@@ -34,7 +34,7 @@ if 'run_count' not in st.session_state:
 # PART 1: THE PAYWALL SCREEN
 # ==========================================
 def paywall_screen():
-    st.title("🚀 Unlock OptiCalc Premium")
+    st.title("🚀 Unlock OptiFlip Premium")
     st.markdown("You hit a Pro feature! Log in or Upgrade to continue.")
     
     if st.button("← Back to Free Version"):
@@ -43,7 +43,7 @@ def paywall_screen():
     
     st.divider()
     
-    tab1, tab2 = st.tabs(["Log In", "Sign Up"])
+    tab1, tab2 = st.tabs(["Log In", "Upgrade Now"])
     
     with tab1:
         with st.form("login_form"):
@@ -92,60 +92,73 @@ def paywall_screen():
                 st.rerun()
 
 # ==========================================
-# PART 2: THE ALGORITHM (UNBOUNDED KNAPSACK)
+# PART 2: THE ALGORITHM (BOUNDED KNAPSACK)
 # ==========================================
-def solve_knapsack(items, capacity):
-    # This is the "Unbounded" version: items can be selected multiple times
-    n = len(items)
-    costs = [int(item['cost']) for item in items]
-    profits = [int(item['profit']) for item in items]
+def solve_knapsack(inventory_items, capacity):
+    # This solves the "Bounded Knapsack Problem"
+    # We expand the list based on the "Limit" (Limit 3 = 3 separate items in the math)
+    
+    expanded_items = []
+    
+    # 1. Expand items based on their Limits
+    for item in inventory_items:
+        limit = int(item['limit'])
+        # Cap limit to avoid crashing if user types 99999
+        limit = min(limit, 100) 
+        
+        for _ in range(limit):
+            expanded_items.append({
+                'name': item['name'],
+                'cost': int(item['cost']),
+                'profit': int(item['profit']),
+                'sell': int(item['sell'])
+            })
+            
+    # 2. Run Standard 0/1 Knapsack on the expanded list
+    n = len(expanded_items)
+    costs = [item['cost'] for item in expanded_items]
+    profits = [item['profit'] for item in expanded_items]
     capacity = int(capacity)
     
-    # dp[w] stores the max profit for capacity w
-    dp = [0 for _ in range(capacity + 1)]
-    
-    # For reconstruction: keep track of which item was added at each weight step
-    # item_choice[w] = index of the item that maximized profit at weight w
-    item_choice = [-1] * (capacity + 1)
+    dp = [[0 for _ in range(capacity + 1)] for _ in range(n + 1)]
 
-    for w in range(1, capacity + 1):
-        for i in range(n):
-            if costs[i] <= w:
-                # If adding item i gives more profit than current best at weight w
-                if dp[w - costs[i]] + profits[i] > dp[w]:
-                    dp[w] = dp[w - costs[i]] + profits[i]
-                    item_choice[w] = i
+    for i in range(1, n + 1):
+        for w in range(1, capacity + 1):
+            if costs[i-1] <= w:
+                dp[i][w] = max(profits[i-1] + dp[i-1][w-costs[i-1]], dp[i-1][w])
+            else:
+                dp[i][w] = dp[i-1][w]
 
-    # Reconstruct the solution (Backtracking)
-    selected_items_map = {} # To count quantities: {"Item A": 3, "Item B": 2}
+    # 3. Backtrack to find the selection
+    selected_items_map = {}
     w = capacity
-    
-    while w > 0 and item_choice[w] != -1:
-        i = item_choice[w]
-        item_name = items[i]['name']
-        
-        # Add to count
-        if item_name in selected_items_map:
-            selected_items_map[item_name]['qty'] += 1
-            selected_items_map[item_name]['total_cost'] += costs[i]
-            selected_items_map[item_name]['total_profit'] += profits[i]
-        else:
-            selected_items_map[item_name] = {
-                'name': item_name,
-                'qty': 1,
-                'cost_per_unit': costs[i],
-                'sell_per_unit': items[i]['sell'],
-                'total_cost': costs[i],
-                'total_profit': profits[i]
-            }
-        w -= costs[i]
+    for i in range(n, 0, -1):
+        if dp[i][w] != dp[i-1][w]:
+            item_name = expanded_items[i-1]['name']
+            item_cost = expanded_items[i-1]['cost']
+            item_profit = expanded_items[i-1]['profit']
+            item_sell = expanded_items[i-1]['sell']
+            
+            # Consolidate results
+            if item_name in selected_items_map:
+                selected_items_map[item_name]['qty'] += 1
+                selected_items_map[item_name]['total_cost'] += item_cost
+                selected_items_map[item_name]['total_profit'] += item_profit
+            else:
+                selected_items_map[item_name] = {
+                    'name': item_name,
+                    'qty': 1,
+                    'cost_per_unit': item_cost,
+                    'sell_per_unit': item_sell,
+                    'total_cost': item_cost,
+                    'total_profit': item_profit
+                }
+            w -= item_cost
 
-    # Convert map back to list for display
-    final_list = list(selected_items_map.values())
-    return dp[capacity], final_list
+    return dp[n][capacity], list(selected_items_map.values())
 
 # ==========================================
-# PART 3: MAIN APP (UPDATED DISPLAY)
+# PART 3: MAIN APP (WITH DEMAND INPUT)
 # ==========================================
 def main_app():
     user = st.session_state.user_info
@@ -170,7 +183,6 @@ def main_app():
                         st.text(f"- {item['qty']}x {item['name']}")
         else:
             st.sidebar.info("Empty Log.")
-            
         st.sidebar.divider()
         if st.sidebar.button("Log Out"):
             st.session_state.user_info = {"name": "Guest User", "plan": "Free"}
@@ -181,24 +193,22 @@ def main_app():
         st.sidebar.caption("Guest Mode (Free)")
         runs_left = FREE_RUN_LIMIT - st.session_state.run_count
         st.sidebar.write(f"**Free Runs Left: {runs_left}/{FREE_RUN_LIMIT}**")
-        if runs_left > 0:
-            st.sidebar.progress(runs_left / FREE_RUN_LIMIT)
-        else:
-            st.sidebar.error("Limit Reached!")
-        
+        st.sidebar.progress(runs_left / FREE_RUN_LIMIT) if runs_left > 0 else st.sidebar.error("Limit Reached!")
         st.sidebar.divider()
         if st.sidebar.button("🔓 Login / Upgrade"):
             st.session_state.show_paywall = True
             st.rerun()
 
     # --- DASHBOARD ---
-    st.title("📈 OptiCalc Dashboard")
+    st.title("📈 OptiFlip Dashboard")
     st.subheader("1. Market Scouting")
     
-    c1, c2, c3 = st.columns(3)
+    # NEW LAYOUT: 4 Columns to include Limit
+    c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
     with c1: name_input = st.text_input("Item Name")
     with c2: cost_input = st.number_input("Cost (₱)", min_value=0, step=100)
     with c3: sell_input = st.number_input("Sell Price (₱)", min_value=0, step=100)
+    with c4: limit_input = st.number_input("Max Qty", min_value=1, value=10, help="Market Demand Limit")
 
     if st.button("Add Item"):
         if not is_premium and len(st.session_state.inventory) >= 5:
@@ -207,10 +217,13 @@ def main_app():
         elif name_input and cost_input > 0:
             profit = sell_input - cost_input
             st.session_state.inventory.append({
-                "name": name_input, "cost": int(cost_input), 
-                "sell": int(sell_input), "profit": int(profit)
+                "name": name_input, 
+                "cost": int(cost_input), 
+                "sell": int(sell_input), 
+                "profit": int(profit),
+                "limit": int(limit_input) # STORE THE LIMIT
             })
-            st.success(f"Added {name_input}")
+            st.success(f"Added {name_input} (Limit: {limit_input})")
             time.sleep(0.5)
             st.rerun()
 
@@ -235,7 +248,7 @@ def main_app():
     st.subheader("2. Optimization Engine")
     budget = st.number_input("Total Capital (₱)", min_value=0, value=10000, step=500)
 
-    if st.button("🚀 Run Analysis (Max Quantity)", type="primary"):
+    if st.button("🚀 Run Analysis (Mixed Strategy)", type="primary"):
         if not is_premium and st.session_state.run_count >= FREE_RUN_LIMIT:
             st.session_state.show_paywall = True
             st.rerun()
@@ -245,7 +258,7 @@ def main_app():
             if not is_premium:
                 st.session_state.run_count += 1
             
-            # RUN UNBOUNDED KNAPSACK
+            # RUN BOUNDED KNAPSACK
             max_profit, best_items = solve_knapsack(st.session_state.inventory, int(budget))
             total_cost = sum(i['total_cost'] for i in best_items)
             roi = (max_profit / total_cost * 100) if total_cost > 0 else 0
@@ -263,23 +276,21 @@ def main_app():
     if st.session_state.latest_result:
         res = st.session_state.latest_result
         
-        st.success("Analysis Complete!")
+        st.success("Optimization Complete! (Market Limits Respected)")
         m1, m2, m3 = st.columns(3)
         m1.metric("Total Investment", f"₱{res['total_cost']:,.0f}")
         m2.metric("Total Profit", f"₱{res['max_profit']:,.0f}")
         m3.metric("ROI", f"{res['roi']:.1f}%")
 
-        # DISPLAY TABLE WITH QUANTITY
-        st.write("### 📋 Recommended Purchase Order")
+        st.write("### 📋 Recommended Mixed Strategy")
         result_df = pd.DataFrame(res['best_items'])
         
-        # Reorder columns for clarity
         if not result_df.empty:
             result_df = result_df[['qty', 'name', 'cost_per_unit', 'total_cost', 'total_profit']]
-            result_df.columns = ['Qty', 'Item Name', 'Unit Cost', 'Total Cost', 'Expected Profit']
+            result_df.columns = ['Qty to Buy', 'Item Name', 'Unit Cost', 'Total Cost', 'Expected Profit']
             st.dataframe(result_df, use_container_width=True)
         else:
-            st.warning("Budget is too low to buy any items.")
+            st.warning("Budget is too low.")
 
         # --- SAVE & EXPORT ---
         c_save, c_export = st.columns(2)
@@ -313,8 +324,9 @@ def main_app():
         st.subheader("3. Visual Analytics")
         if is_premium:
             if not result_df.empty:
+                # PIE CHART is better for showing "Mixed Strategy"
+                st.caption("✅ Portfolio Diversification")
                 st.bar_chart(result_df.set_index('Item Name')['Total Cost'])
-                st.caption("✅ Cost Allocation per Item Type")
         else:
             st.image("blurred_chart.png", use_container_width=True)
             if st.button("🔓 Unlock Analytics"):
@@ -328,4 +340,3 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
-
