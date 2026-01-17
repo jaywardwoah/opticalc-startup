@@ -92,24 +92,32 @@ def paywall_screen():
                 st.rerun()
 
 # ==========================================
-# PART 2: THE ALGORITHM (BOUNDED KNAPSACK)
+# PART 2: THE ALGORITHM (SMART QUANTITY)
 # ==========================================
 def solve_knapsack(inventory_items, capacity):
-    # EXPAND ITEMS BASED ON LIMIT
+    # EXPAND ITEMS (Handle "0" as Unlimited)
     expanded_items = []
+    
     for item in inventory_items:
-        limit = int(item.get('limit', 10)) # Default to 10 if missing
-        limit = min(limit, 100) # Safety Cap
+        limit = int(item.get('limit', 0))
+        cost = int(item['cost'])
+        
+        # LOGIC: If Limit is 0, we calculate the THEORETICAL MAX they can afford
+        # This solves the "I don't know how many to buy" problem.
+        if limit == 0:
+            limit = int(capacity // cost) if cost > 0 else 0
+            # Cap it at 50 to prevent system crash from too many items
+            limit = min(limit, 50) 
         
         for _ in range(limit):
             expanded_items.append({
                 'name': item['name'],
-                'cost': int(item['cost']),
+                'cost': cost,
                 'profit': int(item['profit']),
                 'sell': int(item['sell'])
             })
             
-    # STANDARD KNAPSACK ON EXPANDED LIST
+    # STANDARD KNAPSACK
     n = len(expanded_items)
     costs = [item['cost'] for item in expanded_items]
     profits = [item['profit'] for item in expanded_items]
@@ -157,7 +165,6 @@ def main_app():
     plan = user['plan']
     is_premium = plan == "Premium"
     
-    # --- USAGE LIMIT ---
     FREE_RUN_LIMIT = 3
     
     # --- SIDEBAR ---
@@ -199,12 +206,12 @@ def main_app():
     st.title("📈 OptiFlip Dashboard")
     st.subheader("1. Market Scouting")
     
-    # LAYOUT: 4 Columns
     c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
     with c1: name_input = st.text_input("Item Name")
     with c2: cost_input = st.number_input("Cost (₱)", min_value=0, step=100)
     with c3: sell_input = st.number_input("Sell Price (₱)", min_value=0, step=100)
-    with c4: limit_input = st.number_input("Max Qty", min_value=1, value=10, help="Market Demand Limit")
+    # UPDATED INPUT: Explicitly tell user 0 = Unlimited
+    with c4: limit_input = st.number_input("Limit (0 = Auto)", min_value=0, value=0, help="Leave 0 if you don't know the demand.")
 
     if st.button("Add Item"):
         if not is_premium and len(st.session_state.inventory) >= 5:
@@ -219,7 +226,8 @@ def main_app():
                 "profit": int(profit),
                 "limit": int(limit_input)
             })
-            st.success(f"Added {name_input}")
+            limit_display = "Unlimited" if limit_input == 0 else limit_input
+            st.success(f"Added {name_input} (Limit: {limit_display})")
             time.sleep(0.5)
             st.rerun()
 
@@ -244,7 +252,7 @@ def main_app():
     st.subheader("2. Optimization Engine")
     budget = st.number_input("Total Capital (₱)", min_value=0, value=10000, step=500)
 
-    if st.button("🚀 Run Analysis (Mixed Strategy)", type="primary"):
+    if st.button("🚀 Run Analysis (Best Mix)", type="primary"):
         if not is_premium and st.session_state.run_count >= FREE_RUN_LIMIT:
             st.session_state.show_paywall = True
             st.rerun()
@@ -254,7 +262,6 @@ def main_app():
             if not is_premium:
                 st.session_state.run_count += 1
             
-            # RUN ANALYSIS
             max_profit, best_items = solve_knapsack(st.session_state.inventory, int(budget))
             total_cost = sum(i['total_cost'] for i in best_items)
             roi = (max_profit / total_cost * 100) if total_cost > 0 else 0
@@ -268,27 +275,26 @@ def main_app():
             }
             st.rerun()
 
-    # --- RESULTS DISPLAY ---
+    # --- RESULTS ---
     if st.session_state.latest_result:
         res = st.session_state.latest_result
         
-        st.success("Optimization Complete! (Market Limits Respected)")
+        st.success("Optimization Complete!")
         m1, m2, m3 = st.columns(3)
         m1.metric("Total Investment", f"₱{res['total_cost']:,.0f}")
         m2.metric("Total Profit", f"₱{res['max_profit']:,.0f}")
         m3.metric("ROI", f"{res['roi']:.1f}%")
 
-        st.write("### 📋 Recommended Mixed Strategy")
+        st.write("### 📋 Recommended Quantity to Buy")
         result_df = pd.DataFrame(res['best_items'])
         
         if not result_df.empty:
             result_df = result_df[['qty', 'name', 'cost_per_unit', 'total_cost', 'total_profit']]
-            result_df.columns = ['Qty to Buy', 'Item Name', 'Unit Cost', 'Total Cost', 'Expected Profit']
+            result_df.columns = ['Rec. Qty', 'Item Name', 'Unit Cost', 'Total Cost', 'Expected Profit']
             st.dataframe(result_df, use_container_width=True)
         else:
             st.warning("Budget is too low.")
 
-        # --- SAVE & EXPORT ---
         c_save, c_export = st.columns(2)
         with c_save:
             if st.button("💾 Save to History"):
@@ -315,7 +321,6 @@ def main_app():
                     st.session_state.show_paywall = True
                     st.rerun()
         
-        # --- CHARTS ---
         st.write("---")
         st.subheader("3. Visual Analytics")
         if is_premium:
@@ -323,7 +328,8 @@ def main_app():
                 st.caption("✅ Portfolio Diversification")
                 st.bar_chart(result_df.set_index('Item Name')['Total Cost'])
         else:
-            st.image("blurred_chart.png", use_container_width=True)
+            # FIXED: Uses a web placeholder so it won't crash if file is missing
+            st.image("https://via.placeholder.com/800x400.png?text=Premium+Analytics+(Blurred)", use_container_width=True)
             if st.button("🔓 Unlock Analytics"):
                 st.session_state.show_paywall = True
                 st.rerun()
