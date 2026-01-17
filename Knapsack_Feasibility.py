@@ -95,16 +95,11 @@ def paywall_screen():
 # PART 2: THE ALGORITHM (BOUNDED KNAPSACK)
 # ==========================================
 def solve_knapsack(inventory_items, capacity):
-    # This solves the "Bounded Knapsack Problem"
-    # We expand the list based on the "Limit" (Limit 3 = 3 separate items in the math)
-    
+    # EXPAND ITEMS BASED ON LIMIT
     expanded_items = []
-    
-    # 1. Expand items based on their Limits
     for item in inventory_items:
-        limit = int(item['limit'])
-        # Cap limit to avoid crashing if user types 99999
-        limit = min(limit, 100) 
+        limit = int(item.get('limit', 10)) # Default to 10 if missing
+        limit = min(limit, 100) # Safety Cap
         
         for _ in range(limit):
             expanded_items.append({
@@ -114,7 +109,7 @@ def solve_knapsack(inventory_items, capacity):
                 'sell': int(item['sell'])
             })
             
-    # 2. Run Standard 0/1 Knapsack on the expanded list
+    # STANDARD KNAPSACK ON EXPANDED LIST
     n = len(expanded_items)
     costs = [item['cost'] for item in expanded_items]
     profits = [item['profit'] for item in expanded_items]
@@ -129,36 +124,33 @@ def solve_knapsack(inventory_items, capacity):
             else:
                 dp[i][w] = dp[i-1][w]
 
-    # 3. Backtrack to find the selection
+    # BACKTRACKING
     selected_items_map = {}
     w = capacity
     for i in range(n, 0, -1):
         if dp[i][w] != dp[i-1][w]:
-            item_name = expanded_items[i-1]['name']
-            item_cost = expanded_items[i-1]['cost']
-            item_profit = expanded_items[i-1]['profit']
-            item_sell = expanded_items[i-1]['sell']
+            item = expanded_items[i-1]
+            name = item['name']
             
-            # Consolidate results
-            if item_name in selected_items_map:
-                selected_items_map[item_name]['qty'] += 1
-                selected_items_map[item_name]['total_cost'] += item_cost
-                selected_items_map[item_name]['total_profit'] += item_profit
+            if name in selected_items_map:
+                selected_items_map[name]['qty'] += 1
+                selected_items_map[name]['total_cost'] += item['cost']
+                selected_items_map[name]['total_profit'] += item['profit']
             else:
-                selected_items_map[item_name] = {
-                    'name': item_name,
+                selected_items_map[name] = {
+                    'name': name,
                     'qty': 1,
-                    'cost_per_unit': item_cost,
-                    'sell_per_unit': item_sell,
-                    'total_cost': item_cost,
-                    'total_profit': item_profit
+                    'cost_per_unit': item['cost'],
+                    'sell_per_unit': item['sell'],
+                    'total_cost': item['cost'],
+                    'total_profit': item['profit']
                 }
-            w -= item_cost
+            w -= item['cost']
 
     return dp[n][capacity], list(selected_items_map.values())
 
 # ==========================================
-# PART 3: MAIN APP (WITH DEMAND INPUT)
+# PART 3: MAIN APP
 # ==========================================
 def main_app():
     user = st.session_state.user_info
@@ -193,7 +185,11 @@ def main_app():
         st.sidebar.caption("Guest Mode (Free)")
         runs_left = FREE_RUN_LIMIT - st.session_state.run_count
         st.sidebar.write(f"**Free Runs Left: {runs_left}/{FREE_RUN_LIMIT}**")
-        st.sidebar.progress(runs_left / FREE_RUN_LIMIT) if runs_left > 0 else st.sidebar.error("Limit Reached!")
+        if runs_left > 0:
+            st.sidebar.progress(runs_left / FREE_RUN_LIMIT)
+        else:
+            st.sidebar.error("Limit Reached!")
+        
         st.sidebar.divider()
         if st.sidebar.button("🔓 Login / Upgrade"):
             st.session_state.show_paywall = True
@@ -203,7 +199,7 @@ def main_app():
     st.title("📈 OptiFlip Dashboard")
     st.subheader("1. Market Scouting")
     
-    # NEW LAYOUT: 4 Columns to include Limit
+    # LAYOUT: 4 Columns
     c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
     with c1: name_input = st.text_input("Item Name")
     with c2: cost_input = st.number_input("Cost (₱)", min_value=0, step=100)
@@ -221,9 +217,9 @@ def main_app():
                 "cost": int(cost_input), 
                 "sell": int(sell_input), 
                 "profit": int(profit),
-                "limit": int(limit_input) # STORE THE LIMIT
+                "limit": int(limit_input)
             })
-            st.success(f"Added {name_input} (Limit: {limit_input})")
+            st.success(f"Added {name_input}")
             time.sleep(0.5)
             st.rerun()
 
@@ -258,7 +254,7 @@ def main_app():
             if not is_premium:
                 st.session_state.run_count += 1
             
-            # RUN BOUNDED KNAPSACK
+            # RUN ANALYSIS
             max_profit, best_items = solve_knapsack(st.session_state.inventory, int(budget))
             total_cost = sum(i['total_cost'] for i in best_items)
             roi = (max_profit / total_cost * 100) if total_cost > 0 else 0
@@ -324,7 +320,6 @@ def main_app():
         st.subheader("3. Visual Analytics")
         if is_premium:
             if not result_df.empty:
-                # PIE CHART is better for showing "Mixed Strategy"
                 st.caption("✅ Portfolio Diversification")
                 st.bar_chart(result_df.set_index('Item Name')['Total Cost'])
         else:
