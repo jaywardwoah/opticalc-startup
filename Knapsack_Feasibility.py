@@ -6,12 +6,12 @@ from datetime import datetime
 # ==========================================
 # CONFIGURATION & STATE
 # ==========================================
-st.set_page_config(page_title="OptiFlip: Smart Reseller", layout="centered")
+st.set_page_config(page_title="OptiCalc: Smart Reseller", layout="centered")
 
 # --- DATABASE (MOCK) ---
 if 'users_db' not in st.session_state:
     st.session_state.users_db = {
-        "admin": {"password": "admin", "plan": "Premium", "name": "Engr. Jayward Balinas"}
+        "admin": {"password": "admin", "plan": "Premium", "name": "Admin"}
     }
 
 # --- SESSION FLAGS ---
@@ -34,7 +34,7 @@ if 'run_count' not in st.session_state:
 # PART 1: THE PAYWALL SCREEN
 # ==========================================
 def paywall_screen():
-    st.title("🚀 Unlock OptiFlip Premium")
+    st.title("🚀 Unlock OptiCalc Premium")
     st.markdown("You hit a Pro feature! Log in or Upgrade to continue.")
     
     if st.button("← Back to Free Version"):
@@ -43,7 +43,7 @@ def paywall_screen():
     
     st.divider()
     
-    tab1, tab2 = st.tabs(["Log In", "Upgrade Now"])
+    tab1, tab2 = st.tabs(["Log In", "Sign Up"])
     
     with tab1:
         with st.form("login_form"):
@@ -198,12 +198,12 @@ def main_app():
             st.sidebar.error("Limit Reached!")
         
         st.sidebar.divider()
-        if st.sidebar.button("🔓 Login / Upgrade"):
+        if st.sidebar.button("🔓 Login | Sign Up"):
             st.session_state.show_paywall = True
             st.rerun()
 
     # --- DASHBOARD ---
-    st.title("📈 OptiFlip Dashboard")
+    st.title("📈 OptiCalc Dashboard")
     st.subheader("1. Market Scouting")
     
     c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
@@ -315,9 +315,9 @@ def main_app():
         with c_export:
             if is_premium:
                 csv = result_df.to_csv(index=False).encode('utf-8')
-                st.download_button("📂 Download PO (CSV)", csv, "optiflip_po.csv", "text/csv")
+                st.download_button("📂 Download CSV file", csv, "optiflip_po.csv", "text/csv")
             else:
-                if st.button("📂 Download PO (Locked)"):
+                if st.button("📂 Download CSV file"):
                     st.session_state.show_paywall = True
                     st.rerun()
         
@@ -341,3 +341,4 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
