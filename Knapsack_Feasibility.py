@@ -66,7 +66,7 @@ def paywall_screen():
         new_pass = st.text_input("Choose Password", type="password")
         new_name = st.text_input("Your Name")
         
-        st.info("💳 **Premium Plan: ₱99/month**")
+        st.info("💳 **Premium Plan: ₱149/month**")
         with st.expander("💸 Proceed to Payment", expanded=True):
             c1, c2 = st.columns([1, 2])
             with c1:
@@ -341,4 +341,5 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
