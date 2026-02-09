@@ -53,6 +53,7 @@ def admin_dashboard():
                     c1, c2 = st.columns(2)
                     with c1:
                         st.write(f"**Name:** {req['name']}")
+                        st.write(f"**Email:** {req.get('email', 'N/A')}") # <--- SHOW EMAIL HERE
                         st.write(f"**Plan:** {req['plan']}")
                         st.write(f"**Payment Ref:** `{req['ref_num']}`")
                     with c2:
@@ -62,6 +63,7 @@ def admin_dashboard():
                                 "password": req['password'],
                                 "plan": "Premium",
                                 "name": req['name'],
+                                "email": req.get('email', 'N/A'),
                                 "status": "active"
                             }
                             # 2. Remove from pending
@@ -75,6 +77,25 @@ def admin_dashboard():
                             st.error("Request rejected.")
                             time.sleep(1)
                             st.rerun()
+        else:
+            st.success("No pending payments. All caught up!")
+
+    with tab2:
+        st.write("### Registered Users")
+        users_list = []
+        for u, data in st.session_state.users_db.items():
+            users_list.append({
+                "Username": u, 
+                "Name": data['name'], 
+                "Email": data.get('email', '-'), # <--- Added Email Column
+                "Plan": data['plan'], 
+                "Status": data['status']
+            })
+        st.dataframe(pd.DataFrame(users_list), use_container_width=True)
+        
+    if st.button("Logout Admin"):
+        st.session_state.user_info = {"name": "Guest User", "plan": "Free", "status": "active"}
+        st.rerun()
         else:
             st.success("No pending payments. All caught up!")
 
@@ -150,6 +171,7 @@ def paywall_screen():
         with c1: new_user = st.text_input("Choose Username")
         with c2: new_pass = st.text_input("Choose Password", type="password")
         new_name = st.text_input("Full Name")
+        new_email = st.text_input("Email Address", placeholder="name@example.com")
         
         st.write("---")
         
@@ -494,5 +516,6 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
 
