@@ -324,6 +324,9 @@ def main_app():
         # ==============================================================
         # NEW: BLURRED ANALYTICS LOGIC (FIXED)
         # ==============================================================
+       # ==============================================================
+        # NEW: BLURRED ANALYTICS LOGIC (METHOD 3: Background Image Fix)
+        # ==============================================================
         if is_premium:
             if not result_df.empty:
                 st.caption("✅ Portfolio Diversification")
@@ -331,65 +334,46 @@ def main_app():
             else:
                 st.info("Run the optimization to see charts.")
         else:
-            # 1. DEFINE THE LINK HERE (I put your correct ID in for you)
+            # 1. YOUR GOOGLE DRIVE LINK
             google_drive_link = "https://drive.google.com/uc?export=view&id=11_Yl83_2B6oOYocFild4gsgCSGX5b5gV"
 
-            # 2. USE THE VARIABLE INSIDE THE HTML (Notice {google_drive_link} in the img src)
+            # 2. ROBUST HTML (Uses Background-Image instead of <img> tag)
             st.markdown(f"""
-            <style>
-            .analytics-container {{
+            <div style="
                 position: relative;
                 width: 100%;
-                height: 300px;
+                height: 320px;
                 border-radius: 12px;
                 overflow: hidden;
-                border: 1px solid #e0e0e0;
-            }}
-            .blurred-img {{
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                filter: blur(8px);
-                opacity: 0.6;
-            }}
-            .overlay-content {{
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                text-align: center;
-                background: rgba(255, 255, 255, 0.9);
-                padding: 25px;
-                border-radius: 12px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-                z-index: 10;
-                width: 70%;
-                max-width: 350px;
-            }}
-            .lock-icon {{
-                font-size: 40px;
-                display: block;
-                margin-bottom: 15px;
-            }}
-            .overlay-content h3 {{
-                margin: 0;
-                color: #333;
-                font-size: 22px;
-            }}
-            .overlay-content p {{
-                color: #666;
-                font-size: 14px;
-                margin-top: 10px;
-            }}
-            </style>
-            
-            <div class="analytics-container">
-                <img src="{google_drive_link}" class="blurred-img">
-                
-                <div class="overlay-content">
-                    <span class="lock-icon">🔒</span>
-                    <h3>Unlock Deep Analytics</h3>
-                    <p>See profit trends, ROI analysis, and diversification charts.</p>
+                border: 1px solid #ddd;
+                background-color: #f0f0f0; /* Fallback color */
+            ">
+                <div style="
+                    position: absolute;
+                    top: 0; left: 0; width: 100%; height: 100%;
+                    background-image: url('{google_drive_link}');
+                    background-size: cover; /* This forces the image to fill the box */
+                    background-position: center;
+                    filter: blur(8px); /* The Blur Effect */
+                    transform: scale(1.1); /* Removes white edges from blur */
+                "></div>
+
+                <div style="
+                    position: absolute;
+                    top: 50%; left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(255, 255, 255, 0.95);
+                    padding: 25px;
+                    border-radius: 12px;
+                    text-align: center;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                    width: 70%;
+                    max-width: 350px;
+                    z-index: 2;
+                ">
+                    <div style="font-size: 40px; margin-bottom: 10px;">🔒</div>
+                    <h3 style="margin: 0; color: #333; font-size: 20px;">Unlock Deep Analytics</h3>
+                    <p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">See profit trends, ROI analysis, and diversification charts.</p>
                 </div>
             </div>
             <br>
@@ -406,3 +390,4 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
