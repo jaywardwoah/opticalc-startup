@@ -249,7 +249,7 @@ def main_app():
     st.subheader("2. Optimization Engine")
     budget = st.number_input("Total Capital (₱)", min_value=0, value=10000, step=500)
 
-    if st.button("🚀 Run Analysis (Best Mix)", type="primary"):
+    if st.button("🚀 Run Analysis", type="primary"):
         if not is_premium and st.session_state.run_count >= FREE_RUN_LIMIT:
             st.session_state.show_paywall = True
             st.rerun()
@@ -322,7 +322,7 @@ def main_app():
         st.subheader("3. Visual Analytics")
         
         # ==============================================================
-        # NEW: BLURRED ANALYTICS LOGIC (FINAL FIXED)
+        # NEW: BLURRED ANALYTICS LOGIC 
         # ==============================================================
         if is_premium:
             if not result_df.empty:
@@ -333,24 +333,23 @@ def main_app():
         else:
             google_drive_link = "https://drive.google.com/uc?export=view&id=11_Yl83_2B6oOYocFild4gsgCSGX5b5gV"
 
-            # FIXED: HTML IS NOW FLUSH LEFT (NO SPACES AT START) TO AVOID GRAY BOX
+            # FIXED: SWITCHED TO <IMG> TAG WHICH FOLLOWS GOOGLE REDIRECTS
             st.markdown(f"""
 <div style="position: relative; width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 1px solid #ddd; background-color: #f0f0f0;">
-<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('{google_drive_link}'); background-size: cover; background-position: center; filter: blur(8px); transform: scale(1.1);"></div>
-<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 70%; max-width: 350px; z-index: 2;">
-<div style="font-size: 40px; margin-bottom: 10px;">🔒</div>
-<h3 style="margin: 0; color: #333; font-size: 20px;">Unlock Deep Analytics</h3>
-<p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">See profit trends, ROI analysis, and diversification charts.</p>
-</div>
+    <img src="{google_drive_link}" style="width: 100%; height: 100%; object-fit: cover; filter: blur(8px); transform: scale(1.1);">
+    
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 70%; max-width: 350px; z-index: 2;">
+        <div style="font-size: 40px; margin-bottom: 10px;">🔒</div>
+        <h3 style="margin: 0; color: #333; font-size: 20px;">Unlock Deep Analytics</h3>
+        <p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">See profit trends, ROI analysis, and diversification charts.</p>
+    </div>
 </div>
 <br>
 """, unsafe_allow_html=True)
             
-            # FIXED: Added 'key="analytics_btn"' to stop the DuplicateElementId error
-            if st.button("🚀 Go to Premium", use_container_width=True, type="primary", key="analytics_btn"):
+            if st.button("Go to Premium", use_container_width=True, type="primary", key="analytics_btn"):
                 st.session_state.show_paywall = True
                 st.rerun()
-
 # ==========================================
 # EXECUTION
 # ==========================================
@@ -358,6 +357,7 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
 
 
