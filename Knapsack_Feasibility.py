@@ -321,6 +321,9 @@ def main_app():
         st.write("---")
         st.subheader("3. Visual Analytics")
         
+     # ==============================================================
+        # NEW: BLURRED ANALYTICS LOGIC (METHOD 2: Robust HTML Image)
+        # ==============================================================
         if is_premium:
             if not result_df.empty:
                 st.caption("✅ Portfolio Diversification")
@@ -328,48 +331,66 @@ def main_app():
             else:
                 st.info("Run the optimization to see charts.")
         else:
-            # THIS IS THE CSS/HTML CODE TO CREATE THE BLUR
-            st.markdown("""
+            # ----- PASTE YOUR NEW GOOGLE DRIVE LINK HERE -----
+            google_drive_link = "https://drive.google.com/uc?export=view&id=YOUR_FILE_ID_HERE"
+            # -------------------------------------------------
+
+            # THIS IS THE ROBUST HTML CODE TO CREATE THE BLUR AND OVERLAY
+            st.markdown(f"""
             <style>
-            .blur-container {
+            .analytics-container {{
                 position: relative;
                 width: 100%;
                 height: 300px;
-                /* Background Image of a Financial Chart */
-                background-image: url('https://drive.google.com/file/d/11_Yl83_2B6oOYocFild4gsgCSGX5b5gV/view?usp=sharing');
-                background-size: cover;
-                background-position: center;
-                filter: blur(8px); /* BLUR EFFECT */
-                border-radius: 10px;
-                opacity: 0.7;
-            }
-            .overlay-text {
+                border-radius: 12px;
+                overflow: hidden;
+                border: 1px solid #e0e0e0;
+            }}
+            .blurred-img {{
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                filter: blur(8px); /* THE BLUR EFFECT */
+                opacity: 0.6;
+            }}
+            .overlay-content {{
                 position: absolute;
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
                 text-align: center;
-                background: white;
-                padding: 20px;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 25px;
                 border-radius: 12px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
                 z-index: 10;
-                width: 60%;
-            }
-            .lock-icon {
+                width: 70%;
+                max-width: 350px;
+            }}
+            .lock-icon {{
                 font-size: 40px;
                 display: block;
-                margin-bottom: 10px;
-            }
+                margin-bottom: 15px;
+            }}
+            .overlay-content h3 {{
+                margin: 0;
+                color: #333;
+                font-size: 22px;
+            }}
+            .overlay-content p {{
+                color: #666;
+                font-size: 14px;
+                margin-top: 10px;
+            }}
             </style>
             
-            <div style="position: relative; border-radius: 10px; border: 1px solid #ddd; overflow: hidden;">
-                <div class="blur-container"></div>
+            <div class="analytics-container">
+                <img src="{https://drive.google.com/uc?export=view&id=11_Yl83_2B6oOYocFild4gsgCSGX5b5gV}" class="blurred-img">
                 
-                <div class="overlay-text">
+                <div class="overlay-content">
                     <span class="lock-icon">🔒</span>
                     <h3>Unlock Deep Analytics</h3>
-                    <p style="color: #666; font-size: 14px;">See profit trends, ROI analysis, and diversification charts.</p>
+                    <p>See profit trends, ROI analysis, and diversification charts.</p>
                 </div>
             </div>
             <br>
@@ -387,4 +408,5 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
