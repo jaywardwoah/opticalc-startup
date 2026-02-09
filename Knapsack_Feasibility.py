@@ -332,7 +332,7 @@ def main_app():
                 st.info("Run the optimization to see charts.")
         else:
             # ----- PASTE YOUR NEW GOOGLE DRIVE LINK HERE -----
-            google_drive_link = "https://drive.google.com/uc?export=view&id=YOUR_FILE_ID_HERE"
+            google_drive_link = "https://drive.google.com/uc?export=view&id=11_Yl83_2B6oOYocFild4gsgCSGX5b5gV"
             # -------------------------------------------------
 
             # THIS IS THE ROBUST HTML CODE TO CREATE THE BLUR AND OVERLAY
@@ -385,7 +385,7 @@ def main_app():
             </style>
             
             <div class="analytics-container">
-                <img src="{https://drive.google.com/uc?export=view&id=11_Yl83_2B6oOYocFild4gsgCSGX5b5gV}" class="blurred-img">
+                <img src="{google_drive_link}" class="blurred-img">
                 
                 <div class="overlay-content">
                     <span class="lock-icon">🔒</span>
@@ -408,5 +408,6 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
 
