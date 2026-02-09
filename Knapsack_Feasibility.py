@@ -103,10 +103,8 @@ def solve_knapsack(inventory_items, capacity):
         cost = int(item['cost'])
         
         # LOGIC: If Limit is 0, we calculate the THEORETICAL MAX they can afford
-        # This solves the "I don't know how many to buy" problem.
         if limit == 0:
             limit = int(capacity // cost) if cost > 0 else 0
-            # Cap it at 50 to prevent system crash from too many items
             limit = min(limit, 50) 
         
         for _ in range(limit):
@@ -158,7 +156,7 @@ def solve_knapsack(inventory_items, capacity):
     return dp[n][capacity], list(selected_items_map.values())
 
 # ==========================================
-# PART 3: MAIN APP
+# PART 3: MAIN APP (UPDATED WITH BLURRED ANALYTICS)
 # ==========================================
 def main_app():
     user = st.session_state.user_info
@@ -210,7 +208,6 @@ def main_app():
     with c1: name_input = st.text_input("Item Name")
     with c2: cost_input = st.number_input("Cost (₱)", min_value=0, step=100)
     with c3: sell_input = st.number_input("Sell Price (₱)", min_value=0, step=100)
-    # UPDATED INPUT: Explicitly tell user 0 = Unlimited
     with c4: limit_input = st.number_input("Limit (0 = Auto)", min_value=0, value=0, help="Leave 0 if you don't know the demand.")
 
     if st.button("Add Item"):
@@ -323,14 +320,63 @@ def main_app():
         
         st.write("---")
         st.subheader("3. Visual Analytics")
+        
         if is_premium:
             if not result_df.empty:
                 st.caption("✅ Portfolio Diversification")
                 st.bar_chart(result_df.set_index('Item Name')['Total Cost'])
+            else:
+                st.info("Run the optimization to see charts.")
         else:
-            # FIXED: Uses a web placeholder so it won't crash if file is missing
-            st.image("https://via.placeholder.com/800x400.png?text=Premium+Analytics+(Blurred)", use_container_width=True)
-            if st.button("🔓 Unlock Analytics"):
+            # THIS IS THE CSS/HTML CODE TO CREATE THE BLUR
+            st.markdown("""
+            <style>
+            .blur-container {
+                position: relative;
+                width: 100%;
+                height: 300px;
+                /* Background Image of a Financial Chart */
+                background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');
+                background-size: cover;
+                background-position: center;
+                filter: blur(8px); /* BLUR EFFECT */
+                border-radius: 10px;
+                opacity: 0.7;
+            }
+            .overlay-text {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                background: white;
+                padding: 20px;
+                border-radius: 12px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                z-index: 10;
+                width: 60%;
+            }
+            .lock-icon {
+                font-size: 40px;
+                display: block;
+                margin-bottom: 10px;
+            }
+            </style>
+            
+            <div style="position: relative; border-radius: 10px; border: 1px solid #ddd; overflow: hidden;">
+                <div class="blur-container"></div>
+                
+                <div class="overlay-text">
+                    <span class="lock-icon">🔒</span>
+                    <h3>Unlock Deep Analytics</h3>
+                    <p style="color: #666; font-size: 14px;">See profit trends, ROI analysis, and diversification charts.</p>
+                </div>
+            </div>
+            <br>
+            """, unsafe_allow_html=True)
+            
+            # The actual "Unlock" Button below the image
+            if st.button("🚀 Upgrade to View Charts", use_container_width=True, type="primary"):
                 st.session_state.show_paywall = True
                 st.rerun()
 
@@ -341,5 +387,3 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
-
-
