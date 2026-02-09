@@ -208,7 +208,7 @@ def main_app():
     with c1: name_input = st.text_input("Item Name")
     with c2: cost_input = st.number_input("Cost (₱)", min_value=0, step=100)
     with c3: sell_input = st.number_input("Sell Price (₱)", min_value=0, step=100)
-    with c4: limit_input = st.number_input("Limit (0 = Auto)", min_value=0, value=0, help="Leave 0 if you don't know the demand.")
+    with c4: limit_input = st.number_input(" Max Limit (0 = Auto)", min_value=0, value=0, help="Leave at 0 if you want to buy as many as your budget allows. Only enter a number if you have a limit (e.g., 20 sure buyers).")
 
     if st.button("Add Item"):
         if not is_premium and len(st.session_state.inventory) >= 5:
@@ -357,6 +357,7 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
 
 
