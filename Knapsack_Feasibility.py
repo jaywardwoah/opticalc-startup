@@ -331,7 +331,7 @@ def main_app():
             else:
                 st.info("Run the optimization to see charts.")
         else:
-            google_drive_link = "https://drive.google.com/uc?export=view&id=11_Yl83_2B6oOYocFild4gsgCSGX5b5gV"
+            google_drive_link = "https://previews.123rf.com/images/rawpixel/rawpixel1504/rawpixel150414820/39450668-bar-graph-concept.jpg"
 
             # FIXED: SWITCHED TO <IMG> TAG WHICH FOLLOWS GOOGLE REDIRECTS
             st.markdown(f"""
@@ -357,6 +357,7 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
 
 
