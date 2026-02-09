@@ -324,6 +324,9 @@ def main_app():
      # ==============================================================
         # NEW: BLURRED ANALYTICS LOGIC (METHOD 2: Robust HTML Image)
         # ==============================================================
+        # ==============================================================
+        # NEW: BLURRED ANALYTICS LOGIC (FIXED)
+        # ==============================================================
         if is_premium:
             if not result_df.empty:
                 st.caption("✅ Portfolio Diversification")
@@ -331,11 +334,10 @@ def main_app():
             else:
                 st.info("Run the optimization to see charts.")
         else:
-            # ----- PASTE YOUR NEW GOOGLE DRIVE LINK HERE -----
+            # 1. DEFINE THE LINK HERE (I put your correct ID in for you)
             google_drive_link = "https://drive.google.com/uc?export=view&id=11_Yl83_2B6oOYocFild4gsgCSGX5b5gV"
-            # -------------------------------------------------
 
-            # THIS IS THE ROBUST HTML CODE TO CREATE THE BLUR AND OVERLAY
+            # 2. USE THE VARIABLE INSIDE THE HTML (Notice {google_drive_link} in the img src)
             st.markdown(f"""
             <style>
             .analytics-container {{
@@ -350,7 +352,7 @@ def main_app():
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
-                filter: blur(8px); /* THE BLUR EFFECT */
+                filter: blur(8px);
                 opacity: 0.6;
             }}
             .overlay-content {{
@@ -396,7 +398,6 @@ def main_app():
             <br>
             """, unsafe_allow_html=True)
             
-            # The actual "Unlock" Button below the image
             if st.button("🚀 Go to Premium", use_container_width=True, type="primary"):
                 st.session_state.show_paywall = True
                 st.rerun()
@@ -408,6 +409,7 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
 
 
