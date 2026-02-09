@@ -9,29 +9,89 @@ from datetime import datetime
 st.set_page_config(page_title="OptiCalc: Smart Reseller", layout="centered")
 
 # --- DATABASE (MOCK) ---
+# We added a 'status' field: 'active' or 'pending'
 if 'users_db' not in st.session_state:
     st.session_state.users_db = {
-        "admin": {"password": "admin", "plan": "Premium", "name": "Admin"}
+        "admin": {"password": "admin", "plan": "Premium", "name": "Admin", "status": "active"},
+        "jayward": {"password": "123", "plan": "Premium", "name": "Jayward", "status": "active"} # Sample premium user
     }
+
+# --- PENDING REQUESTS QUEUE ---
+if 'pending_requests' not in st.session_state:
+    st.session_state.pending_requests = []
 
 # --- SESSION FLAGS ---
 if 'user_info' not in st.session_state:
-    st.session_state.user_info = {"name": "Guest User", "plan": "Free"}
+    st.session_state.user_info = {"name": "Guest User", "plan": "Free", "status": "active"}
 if 'inventory' not in st.session_state:
     st.session_state.inventory = []
 if 'history' not in st.session_state:
     st.session_state.history = []
 if 'show_paywall' not in st.session_state:
     st.session_state.show_paywall = False
-if 'payment_verified' not in st.session_state:
-    st.session_state.payment_verified = False
 if 'latest_result' not in st.session_state:
     st.session_state.latest_result = None
 if 'run_count' not in st.session_state:
     st.session_state.run_count = 0
 
 # ==========================================
-# PART 1: THE PAYWALL SCREEN
+# PART 1: THE ADMIN DASHBOARD (NEW!)
+# ==========================================
+def admin_dashboard():
+    st.title("🛡️ Admin Dashboard")
+    st.write("Manage users and approve payments.")
+    
+    tab1, tab2 = st.tabs(["💰 Payment Requests", "👥 All Users"])
+    
+    with tab1:
+        if st.session_state.pending_requests:
+            st.info(f"You have {len(st.session_state.pending_requests)} pending approval(s).")
+            
+            # Loop through pending requests
+            for i, req in enumerate(st.session_state.pending_requests):
+                with st.expander(f"Request from: {req['username']} (Ref: {req['ref_num']})", expanded=True):
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.write(f"**Name:** {req['name']}")
+                        st.write(f"**Plan:** {req['plan']}")
+                        st.write(f"**Payment Ref:** `{req['ref_num']}`")
+                    with c2:
+                        if st.button("✅ Approve", key=f"approve_{i}"):
+                            # 1. Create the user in the main DB
+                            st.session_state.users_db[req['username']] = {
+                                "password": req['password'],
+                                "plan": "Premium",
+                                "name": req['name'],
+                                "status": "active"
+                            }
+                            # 2. Remove from pending
+                            st.session_state.pending_requests.pop(i)
+                            st.success(f"Approved {req['username']}! They can now log in.")
+                            time.sleep(1)
+                            st.rerun()
+                        
+                        if st.button("❌ Reject", key=f"reject_{i}"):
+                            st.session_state.pending_requests.pop(i)
+                            st.error("Request rejected.")
+                            time.sleep(1)
+                            st.rerun()
+        else:
+            st.success("No pending payments. All caught up!")
+
+    with tab2:
+        st.write("### Registered Users")
+        # Convert dict to dataframe for nice display
+        users_list = []
+        for u, data in st.session_state.users_db.items():
+            users_list.append({"Username": u, "Name": data['name'], "Plan": data['plan'], "Status": data['status']})
+        st.dataframe(pd.DataFrame(users_list), use_container_width=True)
+        
+    if st.button("Logout Admin"):
+        st.session_state.user_info = {"name": "Guest User", "plan": "Free", "status": "active"}
+        st.rerun()
+
+# ==========================================
+# PART 2: THE PAYWALL SCREEN (UPDATED FOR PAYMONGO)
 # ==========================================
 def paywall_screen():
     st.title("🚀 Unlock OptiCalc Premium")
@@ -43,8 +103,9 @@ def paywall_screen():
     
     st.divider()
     
-    tab1, tab2 = st.tabs(["Log In", "Sign Up"])
+    tab1, tab2 = st.tabs(["Log In", "Sign Up (PayMongo)"])
     
+    # --- LOGIN TAB ---
     with tab1:
         with st.form("login_form"):
             username = st.text_input("Username")
@@ -52,47 +113,86 @@ def paywall_screen():
             if st.form_submit_button("Sign In"):
                 db = st.session_state.users_db
                 if username in db and db[username]["password"] == password:
-                    st.session_state.user_info = db[username]
-                    st.session_state.show_paywall = False
-                    st.success(f"Welcome back, {db[username]['name']}!")
-                    time.sleep(0.5)
-                    st.rerun()
+                    # Check if they are admin
+                    if username == "admin":
+                        st.session_state.user_info = db[username]
+                        st.session_state.show_paywall = False # Close paywall
+                        st.rerun()
+                    
+                    # Check if they are active
+                    elif db[username]['status'] == 'active':
+                        st.session_state.user_info = db[username]
+                        st.session_state.show_paywall = False
+                        st.success(f"Welcome back, {db[username]['name']}!")
+                        time.sleep(0.5)
+                        st.rerun()
+                    else:
+                        st.warning("⚠️ Your account is still PENDING APPROVAL by Admin.")
                 else:
-                    st.error("Invalid Credentials")
+                    # Check if they are in the pending queue
+                    is_pending = False
+                    for req in st.session_state.pending_requests:
+                        if req['username'] == username and req['password'] == password:
+                            is_pending = True
+                            break
+                    
+                    if is_pending:
+                        st.info("🕒 Your payment is currently being verified by the Admin. Please wait.")
+                    else:
+                        st.error("Invalid Credentials or User does not exist.")
 
+    # --- SIGN UP TAB (PAYMONGO SIMULATION) ---
     with tab2:
         st.write("### ⚡ Create Premium Account")
-        new_user = st.text_input("Choose Username")
-        new_pass = st.text_input("Choose Password", type="password")
-        new_name = st.text_input("Your Name")
         
-        st.info("💳 **Premium Plan: ₱149/month**")
-        with st.expander("💸 Proceed to Payment", expanded=True):
-            c1, c2 = st.columns([1, 2])
-            with c1:
-                st.image("https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg", caption="Scan to Pay")
-            with c2:
-                st.write("**Payment Gateway**")
-                if st.button("✅ Confirm Payment"):
-                    st.session_state.payment_verified = True
-                    st.success("Payment Received!")
-
-        if st.button("Complete Registration"):
-            if not st.session_state.payment_verified:
-                st.error("❌ Please confirm payment first!")
-            elif new_user and new_pass:
-                st.session_state.users_db[new_user] = {
-                    "password": new_pass, "plan": "Premium", "name": new_name
-                }
-                st.session_state.user_info = st.session_state.users_db[new_user]
-                st.session_state.show_paywall = False
-                st.success("Welcome!")
-                st.session_state.payment_verified = False
-                time.sleep(1)
-                st.rerun()
+        # Step 1: User Info
+        c1, c2 = st.columns(2)
+        with c1: new_user = st.text_input("Choose Username")
+        with c2: new_pass = st.text_input("Choose Password", type="password")
+        new_name = st.text_input("Full Name")
+        
+        st.write("---")
+        
+        # Step 2: PayMongo Simulation
+        st.markdown("#### 💳 Payment Method: PayMongo")
+        st.info("Please scan the QR code or send **₱149.00** to GCash/Maya via PayMongo.")
+        
+        # PayMongo-style UI Box
+        with st.container(border=True):
+            col_pm_1, col_pm_2 = st.columns([1, 3])
+            with col_pm_1:
+                # PayMongo Logo (Public URL)
+                st.image("https://assets-global.website-files.com/605c3175390e663a876798c1/605c330f81a7983637e73523_paymongo-green.svg", width=100)
+            with col_pm_2:
+                st.write("**Total Amount:** ₱149.00")
+                st.caption("Securely processed by PayMongo")
+            
+            # The "Verification" Field
+            ref_num = st.text_input("ENTER PAYMENT REFERENCE NUMBER", placeholder="e.g., PM-1234-5678", help="Check your email or SMS for the Ref No.")
+            
+            if st.button("✅ Submit for Verification", type="primary", use_container_width=True):
+                if new_user and new_pass and new_name and ref_num:
+                    # Check if username exists
+                    if new_user in st.session_state.users_db:
+                        st.error("Username already taken.")
+                    else:
+                        # Add to Pending Queue
+                        st.session_state.pending_requests.append({
+                            "username": new_user,
+                            "password": new_pass,
+                            "name": new_name,
+                            "plan": "Premium",
+                            "ref_num": ref_num,
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M")
+                        })
+                        st.balloons()
+                        st.success("🎉 Request Sent! The Admin will verify your payment shortly.")
+                        st.info(f"Please login after approval. (Ref: {ref_num})")
+                else:
+                    st.warning("Please fill in all fields and the Reference Number.")
 
 # ==========================================
-# PART 2: THE ALGORITHM (SMART QUANTITY)
+# PART 3: THE ALGORITHM (SMART QUANTITY)
 # ==========================================
 def solve_knapsack(inventory_items, capacity):
     # EXPAND ITEMS (Handle "0" as Unlimited)
@@ -102,7 +202,6 @@ def solve_knapsack(inventory_items, capacity):
         limit = int(item.get('limit', 0))
         cost = int(item['cost'])
         
-        # LOGIC: If Limit is 0, we calculate the THEORETICAL MAX they can afford
         if limit == 0:
             limit = int(capacity // cost) if cost > 0 else 0
             limit = min(limit, 50) 
@@ -156,10 +255,16 @@ def solve_knapsack(inventory_items, capacity):
     return dp[n][capacity], list(selected_items_map.values())
 
 # ==========================================
-# PART 3: MAIN APP 
+# PART 4: MAIN APP
 # ==========================================
 def main_app():
     user = st.session_state.user_info
+    
+    # --- IF ADMIN, SHOW ADMIN DASHBOARD ---
+    if user['name'] == "Admin":
+        admin_dashboard()
+        return  # Stop here, don't show the reseller dashboard
+
     plan = user['plan']
     is_premium = plan == "Premium"
     
@@ -182,7 +287,7 @@ def main_app():
             st.sidebar.info("Empty Log.")
         st.sidebar.divider()
         if st.sidebar.button("Log Out"):
-            st.session_state.user_info = {"name": "Guest User", "plan": "Free"}
+            st.session_state.user_info = {"name": "Guest User", "plan": "Free", "status": "active"}
             st.session_state.latest_result = None
             st.session_state.run_count = 0
             st.rerun()
@@ -208,7 +313,13 @@ def main_app():
     with c1: name_input = st.text_input("Item Name")
     with c2: cost_input = st.number_input("Cost (₱)", min_value=0, step=100)
     with c3: sell_input = st.number_input("Sell Price (₱)", min_value=0, step=100)
-    with c4: limit_input = st.number_input("Limit (0 = Auto)", min_value=0, value=0, help="Leave at 0 if you want to buy as many as your budget allows. Only enter a number if you have a limit (e.g., 20 sure buyers).")
+    with c4: 
+        limit_input = st.number_input(
+            "Max Limit (0 = Auto)", 
+            min_value=0, 
+            value=0, 
+            help="Leave at 0 if you want to buy as many as your budget allows. Only enter a number if you have a limit (e.g., 20 sure buyers)."
+        )
 
     if st.button("Add Item"):
         if not is_premium and len(st.session_state.inventory) >= 5:
@@ -249,7 +360,7 @@ def main_app():
     st.subheader("2. Optimization Engine")
     budget = st.number_input("Total Capital (₱)", min_value=0, value=10000, step=500)
 
-    if st.button("🚀 Run Analysis", type="primary"):
+    if st.button("🚀 Run Analysis (Best Mix)", type="primary"):
         if not is_premium and st.session_state.run_count >= FREE_RUN_LIMIT:
             st.session_state.show_paywall = True
             st.rerun()
@@ -322,7 +433,7 @@ def main_app():
         st.subheader("3. Visual Analytics")
         
         # ==============================================================
-        # NEW: BLURRED ANALYTICS LOGIC 
+        # NEW: BLURRED ANALYTICS (Using Unsplash Image for Reliability)
         # ==============================================================
         if is_premium:
             if not result_df.empty:
@@ -331,25 +442,51 @@ def main_app():
             else:
                 st.info("Run the optimization to see charts.")
         else:
-            google_drive_link = "https://previews.123rf.com/images/rawpixel/rawpixel1504/rawpixel150414820/39450668-bar-graph-concept.jpg"
+            # We use a HIGH QUALITY public financial chart image.
+            # This is safer than Google Drive because it never gets blocked.
+            safe_image_url = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80"
 
-            # FIXED: SWITCHED TO <IMG> TAG WHICH FOLLOWS GOOGLE REDIRECTS
             st.markdown(f"""
-<div style="position: relative; width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 1px solid #ddd; background-color: #f0f0f0;">
-    <img src="{google_drive_link}" style="width: 100%; height: 100%; object-fit: cover; filter: blur(8px); transform: scale(1.1);">
+<div style="
+    position: relative;
+    width: 100%;
+    height: 300px;
+    border-radius: 12px;
+    overflow: hidden;
+    background-image: url('{safe_image_url}');
+    background-size: cover;
+    background-position: center;
+">
+    <div style="
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(6px);
+    "></div>
     
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 70%; max-width: 350px; z-index: 2;">
+    <div style="
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        width: 280px;
+    ">
         <div style="font-size: 40px; margin-bottom: 10px;">🔒</div>
-        <h3 style="margin: 0; color: #333; font-size: 20px;">Unlock Deep Analytics</h3>
-        <p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">See profit trends, ROI analysis, and diversification charts.</p>
+        <h3 style="margin: 0; color: #333; font-size: 20px;">Unlock Analytics</h3>
+        <p style="margin: 8px 0 0 0; color: #666; font-size: 13px;">View profit trends & ROI charts.</p>
     </div>
 </div>
 <br>
 """, unsafe_allow_html=True)
             
-            if st.button("Go to Premium", use_container_width=True, type="primary", key="analytics_btn"):
+            if st.button("🚀 Go to Premium", use_container_width=True, type="primary", key="analytics_btn"):
                 st.session_state.show_paywall = True
                 st.rerun()
+
 # ==========================================
 # EXECUTION
 # ==========================================
@@ -357,11 +494,3 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
-
-
-
-
-
-
-
-
