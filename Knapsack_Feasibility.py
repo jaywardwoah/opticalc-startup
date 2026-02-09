@@ -37,6 +37,9 @@ if 'run_count' not in st.session_state:
 # ==========================================
 # PART 1: THE ADMIN DASHBOARD (NEW!)
 # ==========================================
+# ==========================================
+# PART 1: THE ADMIN DASHBOARD (FIXED)
+# ==========================================
 def admin_dashboard():
     st.title("🛡️ Admin Dashboard")
     st.write("Manage users and approve payments.")
@@ -53,7 +56,7 @@ def admin_dashboard():
                     c1, c2 = st.columns(2)
                     with c1:
                         st.write(f"**Name:** {req['name']}")
-                        st.write(f"**Email:** {req.get('email', 'N/A')}") # <--- SHOW EMAIL HERE
+                        st.write(f"**Email:** {req.get('email', 'N/A')}") 
                         st.write(f"**Plan:** {req['plan']}")
                         st.write(f"**Payment Ref:** `{req['ref_num']}`")
                     with c2:
@@ -68,7 +71,7 @@ def admin_dashboard():
                             }
                             # 2. Remove from pending
                             st.session_state.pending_requests.pop(i)
-                            st.success(f"Approved {req['username']}! They can now log in.")
+                            st.success(f"Approved {req['username']}!")
                             time.sleep(1)
                             st.rerun()
                         
@@ -87,7 +90,7 @@ def admin_dashboard():
             users_list.append({
                 "Username": u, 
                 "Name": data['name'], 
-                "Email": data.get('email', '-'), # <--- Added Email Column
+                "Email": data.get('email', '-'), 
                 "Plan": data['plan'], 
                 "Status": data['status']
             })
@@ -96,21 +99,6 @@ def admin_dashboard():
     if st.button("Logout Admin"):
         st.session_state.user_info = {"name": "Guest User", "plan": "Free", "status": "active"}
         st.rerun()
-        else:
-            st.success("No pending payments. All caught up!")
-
-    with tab2:
-        st.write("### Registered Users")
-        # Convert dict to dataframe for nice display
-        users_list = []
-        for u, data in st.session_state.users_db.items():
-            users_list.append({"Username": u, "Name": data['name'], "Plan": data['plan'], "Status": data['status']})
-        st.dataframe(pd.DataFrame(users_list), use_container_width=True)
-        
-    if st.button("Logout Admin"):
-        st.session_state.user_info = {"name": "Guest User", "plan": "Free", "status": "active"}
-        st.rerun()
-
 # ==========================================
 # PART 2: THE PAYWALL SCREEN (UPDATED FOR PAYMONGO)
 # ==========================================
@@ -177,14 +165,14 @@ def paywall_screen():
         
         # Step 2: PayMongo Simulation
         st.markdown("#### 💳 Payment Method")
-        st.info("Please scan the QR code or send **₱149.00** to GCash/Maya via PayMongo.")
+        st.info("Please scan the QR code or send **₱149.00** via PayMongo.")
         
         # PayMongo-style UI Box
         with st.container(border=True):
             col_pm_1, col_pm_2 = st.columns([1, 3])
             with col_pm_1:
                 # PayMongo Logo (Public URL)
-                st.image("https://raw.githubusercontent.com/jaywardwoah/opticalc-startup/main/Gemini_Generated_Image_xmmwefxmmwefxmmw.jpg", width=100)
+                st.image("https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg", width=100)
             with col_pm_2:
                 st.write("**Total Amount:** ₱149.00")
                 st.caption("Securely processed by PayMongo")
@@ -516,6 +504,7 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
 
 
