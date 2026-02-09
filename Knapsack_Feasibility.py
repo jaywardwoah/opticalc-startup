@@ -320,13 +320,6 @@ def main_app():
         
         st.write("---")
         st.subheader("3. Visual Analytics")
-        
-        # ==============================================================
-        # NEW: BLURRED ANALYTICS LOGIC (FIXED)
-        # ==============================================================
-       # ==============================================================
-        # NEW: BLURRED ANALYTICS LOGIC (METHOD 3: Background Image Fix)
-        # ==============================================================
         if is_premium:
             if not result_df.empty:
                 st.caption("✅ Portfolio Diversification")
@@ -390,4 +383,5 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
