@@ -321,9 +321,6 @@ def main_app():
         st.write("---")
         st.subheader("3. Visual Analytics")
         
-     # ==============================================================
-        # NEW: BLURRED ANALYTICS LOGIC (METHOD 2: Robust HTML Image)
-        # ==============================================================
         # ==============================================================
         # NEW: BLURRED ANALYTICS LOGIC (FIXED)
         # ==============================================================
@@ -409,7 +406,3 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
-
-
-
-
