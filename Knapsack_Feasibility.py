@@ -156,7 +156,7 @@ def solve_knapsack(inventory_items, capacity):
     return dp[n][capacity], list(selected_items_map.values())
 
 # ==========================================
-# PART 3: MAIN APP (UPDATED WITH BLURRED ANALYTICS)
+# PART 3: MAIN APP 
 # ==========================================
 def main_app():
     user = st.session_state.user_info
@@ -336,7 +336,7 @@ def main_app():
                 width: 100%;
                 height: 300px;
                 /* Background Image of a Financial Chart */
-                background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');
+                background-image: url('https://drive.google.com/file/d/11_Yl83_2B6oOYocFild4gsgCSGX5b5gV/view?usp=sharing');
                 background-size: cover;
                 background-position: center;
                 filter: blur(8px); /* BLUR EFFECT */
@@ -376,7 +376,7 @@ def main_app():
             """, unsafe_allow_html=True)
             
             # The actual "Unlock" Button below the image
-            if st.button("🚀 Upgrade to View Charts", use_container_width=True, type="primary"):
+            if st.button("🚀 Go to Premium", use_container_width=True, type="primary"):
                 st.session_state.show_paywall = True
                 st.rerun()
 
@@ -387,3 +387,4 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
