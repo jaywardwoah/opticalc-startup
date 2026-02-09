@@ -103,7 +103,7 @@ def paywall_screen():
     
     st.divider()
     
-    tab1, tab2 = st.tabs(["Log In", "Sign Up (PayMongo)"])
+    tab1, tab2 = st.tabs(["Log In", "Sign Up"])
     
     # --- LOGIN TAB ---
     with tab1:
@@ -154,7 +154,7 @@ def paywall_screen():
         st.write("---")
         
         # Step 2: PayMongo Simulation
-        st.markdown("#### 💳 Payment Method: PayMongo")
+        st.markdown("#### 💳 Payment Method)
         st.info("Please scan the QR code or send **₱149.00** to GCash/Maya via PayMongo.")
         
         # PayMongo-style UI Box
@@ -162,7 +162,7 @@ def paywall_screen():
             col_pm_1, col_pm_2 = st.columns([1, 3])
             with col_pm_1:
                 # PayMongo Logo (Public URL)
-                st.image("https://assets-global.website-files.com/605c3175390e663a876798c1/605c330f81a7983637e73523_paymongo-green.svg", width=100)
+                st.image("https://github.com/jaywardwoah/opticalc-startup/blob/main/Gemini_Generated_Image_xmmwefxmmwefxmmw.png", width=100)
             with col_pm_2:
                 st.write("**Total Amount:** ₱149.00")
                 st.caption("Securely processed by PayMongo")
@@ -494,3 +494,4 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
