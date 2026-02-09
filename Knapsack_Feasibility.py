@@ -172,7 +172,7 @@ def paywall_screen():
             col_pm_1, col_pm_2 = st.columns([1, 3])
             with col_pm_1:
                 # PayMongo Logo (Public URL)
-                st.image("https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg", width=100)
+                st.image("https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg", width=150)
             with col_pm_2:
                 st.write("**Total Amount:** ₱149.00")
                 st.caption("Securely processed by PayMongo")
@@ -504,6 +504,7 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
 
 
