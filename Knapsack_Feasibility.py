@@ -320,6 +320,10 @@ def main_app():
         
         st.write("---")
         st.subheader("3. Visual Analytics")
+        
+        # ==============================================================
+        # NEW: BLURRED ANALYTICS LOGIC (FINAL FIXED)
+        # ==============================================================
         if is_premium:
             if not result_df.empty:
                 st.caption("✅ Portfolio Diversification")
@@ -329,23 +333,21 @@ def main_app():
         else:
             google_drive_link = "https://drive.google.com/uc?export=view&id=11_Yl83_2B6oOYocFild4gsgCSGX5b5gV"
 
+            # FIXED: HTML IS NOW FLUSH LEFT (NO SPACES AT START) TO AVOID GRAY BOX
             st.markdown(f"""
 <div style="position: relative; width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 1px solid #ddd; background-color: #f0f0f0;">
-    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('{google_drive_link}'); background-size: cover; background-position: center; filter: blur(8px); transform: scale(1.1);"></div>
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 70%; max-width: 350px; z-index: 2;">
-        <div style="font-size: 40px; margin-bottom: 10px;">🔒</div>
-        <h3 style="margin: 0; color: #333; font-size: 20px;">Unlock Deep Analytics</h3>
-        <p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">See profit trends, ROI analysis, and diversification charts.</p>
-    </div>
+<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('{google_drive_link}'); background-size: cover; background-position: center; filter: blur(8px); transform: scale(1.1);"></div>
+<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 70%; max-width: 350px; z-index: 2;">
+<div style="font-size: 40px; margin-bottom: 10px;">🔒</div>
+<h3 style="margin: 0; color: #333; font-size: 20px;">Unlock Deep Analytics</h3>
+<p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">See profit trends, ROI analysis, and diversification charts.</p>
+</div>
 </div>
 <br>
 """, unsafe_allow_html=True)
             
-            if st.button("🚀 Go to Premium", use_container_width=True, type="primary"):
-                st.session_state.show_paywall = True
-                st.rerun()
-            
-            if st.button("🚀 Go to Premium", use_container_width=True, type="primary"):
+            # FIXED: Added 'key="analytics_btn"' to stop the DuplicateElementId error
+            if st.button("🚀 Go to Premium", use_container_width=True, type="primary", key="analytics_btn"):
                 st.session_state.show_paywall = True
                 st.rerun()
 
@@ -356,6 +358,7 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
 
 
