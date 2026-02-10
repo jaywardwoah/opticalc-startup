@@ -44,7 +44,7 @@ def admin_dashboard():
     st.title("🛡️ Admin Dashboard")
     st.write("Manage users and approve payments.")
     
-    tab1, tab2 = st.tabs(["💰 Payment Requests", "👥 All Users"])
+    tab1, tab2 = st.tabs(["Payment Requests", "All Users"])
     
     with tab1:
         if st.session_state.pending_requests:
@@ -504,6 +504,7 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
 
 
