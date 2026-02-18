@@ -35,10 +35,7 @@ if 'run_count' not in st.session_state:
     st.session_state.run_count = 0
 
 # ==========================================
-# PART 1: THE ADMIN DASHBOARD (NEW!)
-# ==========================================
-# ==========================================
-# PART 1: THE ADMIN DASHBOARD (FIXED)
+# PART 1: THE ADMIN DASHBOARD 
 # ==========================================
 def admin_dashboard():
     st.title("🛡️ Admin Dashboard")
@@ -100,7 +97,7 @@ def admin_dashboard():
         st.session_state.user_info = {"name": "Guest User", "plan": "Free", "status": "active"}
         st.rerun()
 # ==========================================
-# PART 2: THE PAYWALL SCREEN (UPDATED FOR PAYMONGO)
+# PART 2: THE PAYWALL SCREEN 
 # ==========================================
 def paywall_screen():
     st.title("🚀 Unlock OptiCalc Premium")
@@ -202,7 +199,7 @@ def paywall_screen():
                     st.warning("Please fill in all fields and the Reference Number.")
 
 # ==========================================
-# PART 3: THE ALGORITHM (SMART QUANTITY)
+# PART 3: THE ALGORITHM 
 # ==========================================
 def solve_knapsack(inventory_items, capacity):
     # EXPAND ITEMS (Handle "0" as Unlimited)
@@ -504,6 +501,7 @@ if st.session_state.show_paywall:
     paywall_screen()
 else:
     main_app()
+
 
 
 
